@@ -1,0 +1,11 @@
+<!DOCTYPE html><html><body>
+    <h2>Add Vault Entry</h2>
+    <form action="/vault/add" method="POST">
+        <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
+        <label>Site: <input type="text" name="site" required></label><br><br>
+        <label>Username: <input type="text" name="site_user" required></label><br><br>
+        <label>Password: <input type="password" name="site_pass" required></label><br><br>
+        <button type="submit">Save Entry</button>
+    </form>
+    <br><a href="/vault">Back to Vault</a>
+</body></html>
