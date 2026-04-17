@@ -64,16 +64,21 @@ void session_destroy(const char* token) {
 
 void session_extract_cookie(struct mg_http_message* hm, char* token_out, size_t max_len) {
     token_out[0] = '\0';
-    struct mg_str *cookie = mg_http_get_header(&hm->body, "Cookie");
-    if (cookie != NULL) {
-        const char *p = strstr(cookie->buf, "session_id=");
-        if (p && p < cookie->buf + cookie->len) {
-            p += 11;
-            size_t i = 0;
-            while (p < cookie->buf + cookie->len && *p != ';' && i < max_len - 1) {
-                token_out[i++] = *p++;
+    
+    for (int i = 0; i < hm->num_headers; i++) {
+        if (strncasecmp(hm->headers[i].name, "Cookie", 6) == 0) {
+            const char* cookie_str = hm->headers[i].value;
+            
+            const char* p = strstr(cookie_str, "session_id=");
+            if (p) {
+                p += 11;
+                size_t j = 0;
+                while (*p && *p != ';' && *p != ' ' && j < max_len - 1) {
+                    token_out[j++] = *p++;
+                }
+                token_out[j] = '\0';
             }
-            token_out[i] = '\0';
+            break;
         }
     }
 }
