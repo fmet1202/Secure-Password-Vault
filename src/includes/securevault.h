@@ -58,6 +58,10 @@ void auth_logout(LoggedInUser* session);
 bool vault_add(LoggedInUser* session, const char* site, const char* username, const char* password);
 void vault_view(LoggedInUser* session);
 bool vault_delete(LoggedInUser* session, int entry_id);
+bool vault_get_entry(LoggedInUser* session, int entry_id, char* site, char* username, char* password);
+bool vault_update(LoggedInUser* session, int entry_id, const char* site, const char* username, const char* password);
+
+void crypto_generate_password(char* buffer, size_t length);
 
 struct mg_http_message;
 bool session_create(int user_id, const uint8_t* derived_key, char* out_token, char* out_csrf);

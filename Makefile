@@ -2,7 +2,10 @@ CC = gcc
 
 PG_INC = $(shell pg_config --includedir)
 
-CFLAGS = -Wall -Wextra -Isrc/includes -I$(PG_INC) -O2
+CFLAGS = -Wall -Wextra -Isrc/includes -I$(PG_INC) -O2 \
+         -DHAVE_LIBPQ -DHAVE_OPENSSL -DHAVE_ARGON2 -DHAVE_MONGOOSE \
+         -DMG_TLS=MG_TLS_OPENSSL
+
 LDFLAGS = -lssl -lcrypto -lpq -largon2 -lpthread
 
 SRC_DIR = src
