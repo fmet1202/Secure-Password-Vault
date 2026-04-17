@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - Edit Entry</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Edit Credential</h1>
+    </header>
+    <main>
+        <form action="/vault/edit" method="POST">
+            <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
+            <input type="hidden" name="entry_id" value="{{ID}}">
+            <p><label>Site / URL</label><input type="text" name="site" value="{{SITE}}" required></p>
+            <p><label>Username</label><input type="text" name="site_user" value="{{USER}}" required></p>
+            <p>
+                <label>Password</label>
+                <input type="text" id="site_pass" name="site_pass" value="{{PASS}}" required>
+            </p>
+            <p>
+                <button type="button" class="notice" onclick="fetch('/api/generate').then(r=>r.text()).then(t=>document.getElementById('site_pass').value=t)">🎲 Generate New Password</button>
+            </p>
+            <button type="submit">Update Entry</button>
+        </form>
+        <p><a href="/vault">Back to Vault</a></p>
+    </main>
+</body>
+</html>

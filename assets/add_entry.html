@@ -1,11 +1,30 @@
-<!DOCTYPE html><html><body>
-    <h2>Add Vault Entry</h2>
-    <form action="/vault/add" method="POST">
-        <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
-        <label>Site: <input type="text" name="site" required></label><br><br>
-        <label>Username: <input type="text" name="site_user" required></label><br><br>
-        <label>Password: <input type="password" name="site_pass" required></label><br><br>
-        <button type="submit">Save Entry</button>
-    </form>
-    <br><a href="/vault">Back to Vault</a>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - Add Entry</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>Add Credential</h1>
+    </header>
+    <main>
+        <form action="/vault/add" method="POST">
+            <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
+            <p><label>Site / URL</label><input type="text" name="site" required></p>
+            <p><label>Username</label><input type="text" name="site_user" required></p>
+            <p>
+                <label>Password</label>
+                <input type="password" id="site_pass" name="site_pass" required>
+            </p>
+            <p>
+                <button type="button" class="notice" onclick="fetch('/api/generate').then(r=>r.text()).then(t=>document.getElementById('site_pass').value=t)">🎲 Generate Secure Password</button>
+            </p>
+            <button type="submit">Save to Vault</button>
+        </form>
+        <p><a href="/vault">Back to Vault</a></p>
+    </main>
+</body>
+</html>

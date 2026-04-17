@@ -1,9 +1,30 @@
-<!DOCTYPE html><html><body>
-    <h2>SecureVault Login</h2>
-    <form action="/login" method="POST">
-        <label>Username: <input type="text" name="username" required></label><br><br>
-        <label>Password: <input type="password" name="password" required></label><br><br>
-        <button type="submit">Login</button>
-    </form>
-    <a href="/register">Create an account</a>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - Login</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>SecureVault</h1>
+        <p>Enterprise-grade credential management.</p>
+    </header>
+    <main>
+        <h3>Login</h3>
+        <form action="/login" method="POST">
+            <p>
+                <label>Username</label>
+                <input type="text" name="username" required>
+            </p>
+            <p>
+                <label>Master Password</label>
+                <input type="password" name="password" required>
+            </p>
+            <button type="submit">Unlock Vault</button>
+        </form>
+        <p><a href="/register">Don't have an account? Register here.</a></p>
+    </main>
+</body>
+</html>

@@ -1,9 +1,31 @@
-<!DOCTYPE html><html><body>
-    <h2>Register</h2>
-    <form action="/register" method="POST">
-        <label>Username: <input type="text" name="username" required></label><br><br>
-        <label>Password: <input type="password" name="password" required minlength="8"></label><br><br>
-        <button type="submit">Register</button>
-    </form>
-    <a href="/login">Back to Login</a>
-</body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureVault - Register</title>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+</head>
+<body>
+    <header>
+        <h1>SecureVault</h1>
+        <p>Create your secure cryptographic identity.</p>
+    </header>
+    <main>
+        <h3>Register</h3>
+        <form action="/register" method="POST">
+            <p>
+                <label>Choose a Username</label>
+                <input type="text" name="username" required>
+            </p>
+            <p>
+                <label>Create Master Password</label>
+                <input type="password" name="password" required minlength="8">
+                <small>Must be at least 8 characters. Do not forget this; it cannot be recovered!</small>
+            </p>
+            <button type="submit">Create Account</button>
+        </form>
+        <p><a href="/login">Back to Login</a></p>
+    </main>
+</body>
+</html>
