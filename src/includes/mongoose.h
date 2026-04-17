@@ -55,12 +55,18 @@ typedef struct mg_str {
     size_t len;
 } mg_str;
 
+typedef struct {
+    char name[64];
+    char value[512];
+} HttpHeaderParsed;
+
 typedef struct mg_http_message {
     HttpMethod method;
     mg_str uri;
+    mg_str query;
     mg_str query_string;
     mg_str body;
-    mg_str headers[MG_MAX_HEADERS];
+    HttpHeaderParsed headers[MG_MAX_HEADERS];
     int num_headers;
 } mg_http_message;
 
@@ -72,7 +78,16 @@ typedef struct mg_mgr {
 typedef struct mg_connection {
     int fd;
     struct sockaddr_in addr;
+    void* tls_ctx;
 } mg_connection;
+
+typedef struct mg_tls_opts {
+    struct mg_str cert;
+    struct mg_str key;
+} mg_tls_opts;
+
+#define MG_EV_ACCEPT 0x01
+#define MG_TLS_OPENSSL 1
 
 typedef void (*mg_event_handler_t)(struct mg_connection*, int, void*);
 
@@ -80,9 +95,11 @@ void mg_mgr_init(mg_mgr*);
 void mg_http_listen(mg_mgr*, const char*, mg_event_handler_t, void*);
 void mg_mgr_poll(mg_mgr*, int);
 void mg_mgr_free(mg_mgr*);
+void mg_tls_init(struct mg_connection*, struct mg_tls_opts*);
 
 int mg_http_get_var(const mg_str* body, const char* name, char* out, size_t len);
 mg_str* mg_http_get_header(const mg_str* hm, const char* name);
+struct mg_str mg_str_n(const char* s, size_t len);
 struct mg_http_message* mg_http_get_message(struct mg_connection* c);
 
 bool mg_match(mg_str uri, mg_str pattern, int* caps);

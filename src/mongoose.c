@@ -10,6 +10,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #define MG_BUF_SIZE 8192
 #define MG_MAX_CLIENTS 100
@@ -19,9 +21,14 @@ typedef struct ClientData {
     char buffer[MG_BUF_SIZE];
     size_t buf_len;
     mg_http_message hm;
+    SSL* ssl;
+    struct mg_connection* mc;
 } ClientData;
 
+static SSL_CTX* g_ssl_ctx = NULL;
+
 static volatile bool g_running = false;
+static __thread SSL* g_current_ssl = NULL;
 
 typedef struct {
     int listen_fd;
@@ -100,6 +107,37 @@ static bool parse_http_message(ClientData* cd, mg_http_message* hm) {
     hm->uri.buf = strdup(uri);
     hm->uri.len = strlen(uri);
     
+    hm->num_headers = 0;
+    char* line_start = buf;
+    char* line_end;
+    
+    while ((line_end = strstr(line_start, "\r\n")) != NULL && hm->num_headers < MG_MAX_HEADERS) {
+        if (line_end == line_start) {
+            break;
+        }
+        
+        char* colon = strchr(line_start, ':');
+        if (colon && colon < line_end) {
+            size_t name_len = (size_t)(colon - line_start);
+            if (name_len < sizeof(hm->headers[0].name)) {
+                memcpy(hm->headers[hm->num_headers].name, line_start, name_len);
+                hm->headers[hm->num_headers].name[name_len] = '\0';
+                
+                colon++;
+                while (*colon == ' ' && colon < line_end) colon++;
+                
+                size_t value_len = (size_t)(line_end - colon);
+                if (value_len < sizeof(hm->headers[0].value)) {
+                    memcpy(hm->headers[hm->num_headers].value, colon, value_len);
+                    hm->headers[hm->num_headers].value[value_len] = '\0';
+                    hm->num_headers++;
+                }
+            }
+        }
+        
+        line_start = line_end + 2;
+    }
+    
     char* body_start = strstr(buf, "\r\n\r\n");
     if (body_start) {
         body_start += 4;
@@ -114,17 +152,25 @@ static bool parse_http_message(ClientData* cd, mg_http_message* hm) {
     return true;
 }
 
+struct mg_str mg_str_n(const char* s, size_t len) {
+    struct mg_str result;
+    result.buf = (char*)s;
+    result.len = len;
+    return result;
+}
+
 bool mg_match(mg_str uri, mg_str pattern, int* caps) {
     (void)caps;
-    if (pattern.buf[0] == '/') {
-        if (uri.len >= pattern.len && strncmp(uri.buf, pattern.buf, pattern.len) == 0) {
-            return true;
-        }
-    }
     if (pattern.buf[0] == '*') {
         return true;
     }
-    return uri.len == pattern.len && strncmp(uri.buf, pattern.buf, uri.len) == 0;
+    if (pattern.len == 1 && pattern.buf[0] == '/') {
+        return uri.len == 1 && uri.buf[0] == '/';
+    }
+    if (uri.len >= pattern.len && strncmp(uri.buf, pattern.buf, pattern.len) == 0) {
+        return uri.len == pattern.len || uri.buf[pattern.len] == '?' || uri.buf[pattern.len] == '/';
+    }
+    return false;
 }
 
 int mg_vcasecmp(const mg_str* a, const char* b) {
@@ -192,25 +238,45 @@ void mg_http_reply(struct mg_connection* c, int status_code, const char* headers
         offset += snprintf(response + offset, sizeof(response) - offset, "\r\n");
     }
     
-    send(c->fd, response, (size_t)offset, 0);
+    if (g_current_ssl) {
+        SSL_write(g_current_ssl, response, offset);
+    } else {
+        send(c->fd, response, (size_t)offset, 0);
+    }
 }
 
 static void* handle_connection(void* arg) {
     ClientData* cd = (ClientData*)arg;
+    extern mg_event_handler_t g_current_handler;
+    extern bool g_use_https;
     
-    if (cd->buf_len > 0) {
+    mg_connection mc = { .fd = cd->fd };
+    
+    if (g_use_https && g_current_handler) {
+        g_current_handler(&mc, 1, NULL);
+        
+        SSL* ssl = (SSL*)mc.tls_ctx;
+        if (ssl) {
+            cd->ssl = ssl;
+            g_current_ssl = ssl;
+            cd->buf_len = (size_t)SSL_read(ssl, cd->buffer, MG_BUF_SIZE - 1);
+        }
+        
+        if (cd->buf_len > 0) {
+            parse_http_message(cd, &cd->hm);
+            mg_http_message* hm = &cd->hm;
+            g_current_handler(&mc, 0x1E9, hm);
+        }
+        g_current_ssl = NULL;
+    } else if (cd->buf_len > 0) {
         parse_http_message(cd, &cd->hm);
-        
-        mg_connection mc = { .fd = cd->fd };
         mg_http_message* hm = &cd->hm;
-        
-        void* user_data = NULL;
-        extern mg_event_handler_t g_current_handler;
         if (g_current_handler) {
             g_current_handler(&mc, 0x1E9, hm);
         }
     }
     
+    if (mc.tls_ctx) SSL_free((SSL*)mc.tls_ctx);
     close(cd->fd);
     if (cd->hm.uri.buf) free((void*)cd->hm.uri.buf);
     if (cd->hm.body.buf) free((void*)cd->hm.body.buf);
@@ -219,6 +285,42 @@ static void* handle_connection(void* arg) {
 }
 
 mg_event_handler_t g_current_handler = NULL;
+int g_port = 8443;
+bool g_use_https = false;
+
+void mg_tls_init(struct mg_connection* c, struct mg_tls_opts* opts) {
+    (void)opts;
+    c->tls_ctx = NULL;
+    if (g_ssl_ctx && c->fd >= 0) {
+        SSL* ssl = SSL_new(g_ssl_ctx);
+        if (ssl) {
+            SSL_set_fd(ssl, c->fd);
+            int ret = SSL_accept(ssl);
+            if (ret <= 0) {
+                int err = SSL_get_error(ssl, ret);
+                if (err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE) {
+                    SSL_free(ssl);
+                    return;
+                }
+            }
+            c->tls_ctx = ssl;
+        }
+    }
+}
+
+static void init_ssl_ctx(const char* cert, const char* key) {
+    if (g_ssl_ctx) return;
+    
+    SSL_library_init();
+    SSL_load_error_strings();
+    OpenSSL_add_all_algorithms();
+    
+    g_ssl_ctx = SSL_CTX_new(TLS_server_method());
+    if (g_ssl_ctx) {
+        SSL_CTX_use_certificate_file(g_ssl_ctx, cert, SSL_FILETYPE_PEM);
+        SSL_CTX_use_PrivateKey_file(g_ssl_ctx, key, SSL_FILETYPE_PEM);
+    }
+}
 
 void mg_mgr_init(mg_mgr* mgr) {
     mg_mgr_internal* m = (mg_mgr_internal*)calloc(1, sizeof(mg_mgr_internal));
@@ -229,8 +331,14 @@ void mg_mgr_init(mg_mgr* mgr) {
 void mg_http_listen(mg_mgr* mgr, const char* url, mg_event_handler_t handler, void* user_data) {
     (void)user_data;
     
-    int port = 8000;
-    sscanf(url, "http://%*[^:]:%d", &port);
+    g_port = 8443;
+    g_use_https = false;
+    
+    if (strncmp(url, "https://", 8) == 0) {
+        g_use_https = true;
+        init_ssl_ctx("cert.pem", "key.pem");
+    }
+    sscanf(url, "%*[^:]://%*[^:]:%d", &g_port);
     
     int listen_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (listen_fd < 0) return;
@@ -241,7 +349,7 @@ void mg_http_listen(mg_mgr* mgr, const char* url, mg_event_handler_t handler, vo
     struct sockaddr_in addr = {0};
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
-    addr.sin_port = htons((uint16_t)port);
+    addr.sin_port = htons((uint16_t)g_port);
     
     if (bind(listen_fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
         close(listen_fd);
@@ -256,7 +364,7 @@ void mg_http_listen(mg_mgr* mgr, const char* url, mg_event_handler_t handler, vo
     mgr->listen_fd = listen_fd;
     g_current_handler = handler;
     
-    printf("[SERVER] Mongoose listening on http://0.0.0.0:%d\n", port);
+    printf("[SERVER] Mongoose listening on %s://0.0.0.0:%d\n", g_use_https ? "https" : "http", g_port);
 }
 
 void mg_mgr_poll(mg_mgr* mgr, int timeout_ms) {
@@ -281,15 +389,21 @@ void mg_mgr_poll(mg_mgr* mgr, int timeout_ms) {
             ClientData* cd = calloc(1, sizeof(ClientData));
             if (cd) {
                 cd->fd = client_fd;
-                cd->buf_len = (size_t)read(client_fd, cd->buffer, MG_BUF_SIZE - 1);
                 
-                if (cd->buf_len > 0) {
+                if (!g_use_https) {
+                    cd->buf_len = (size_t)read(client_fd, cd->buffer, MG_BUF_SIZE - 1);
+                    if (cd->buf_len > 0) {
+                        pthread_t thread;
+                        pthread_create(&thread, NULL, handle_connection, cd);
+                        pthread_detach(thread);
+                    } else {
+                        close(client_fd);
+                        free(cd);
+                    }
+                } else {
                     pthread_t thread;
                     pthread_create(&thread, NULL, handle_connection, cd);
                     pthread_detach(thread);
-                } else {
-                    close(client_fd);
-                    free(cd);
                 }
             } else {
                 close(client_fd);
