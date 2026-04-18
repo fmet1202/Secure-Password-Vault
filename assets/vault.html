@@ -10,11 +10,19 @@
     <header>
         <h1>My Vault</h1>
         <nav>
-            <a href="/vault/add">➕ Add New Entry</a>
-            <a href="/logout">🚪 Logout</a>
+            <a href="/vault/add">Add New Entry</a>
+            <a href="/logout">Logout</a>
         </nav>
     </header>
     <main>
+        {{MESSAGE}}
+        
+        <form method="GET" action="/vault" style="display: flex; gap: 10px; margin-bottom: 1rem;">
+            <input type="text" name="q" placeholder="Search site or username..." style="flex: 1;">
+            <button type="submit" style="margin: 0;">Search</button>
+            <a href="/vault" class="button" style="margin: 0; background: #999; border: none;">Clear</a>
+        </form>
+
         <table>
             <thead>
                 <tr>

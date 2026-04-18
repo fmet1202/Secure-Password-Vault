@@ -11,6 +11,7 @@
         <h1>Add Credential</h1>
     </header>
     <main>
+        {{MESSAGE}}
         <form action="/vault/add" method="POST">
             <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
             <p><label>Site / URL</label><input type="text" name="site" required></p>
