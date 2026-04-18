@@ -7,7 +7,6 @@
                     "Cache-Control: no-store, max-age=0\r\n" \
                     "Strict-Transport-Security: max-age=31536000\r\n"
 
-// Global variables to hold the certificates in RAM
 static struct mg_str s_cert;
 static struct mg_str s_key;
 
@@ -90,27 +89,22 @@ static bool is_route(struct mg_http_message *hm, const char *path) {
     return hm->uri.len == len && memcmp(hm->uri.buf, path, len) == 0;
 }
 
-// Safely extracts the HTTP Method by looking backwards from the URI string, 
-// avoiding all struct member clashes with OpenSSL!
+// FIX: Avoid hm->method entirely. Forms send a body. GET requests don't.
 static bool is_post(struct mg_http_message *hm) {
-    if (hm->uri.buf == NULL) return false;
-    const char *p = hm->uri.buf;
-    if (p[-1] == ' ' && p[-2] == 'T' && p[-3] == 'S' && p[-4] == 'O' && p[-5] == 'P') {
-        return true;
-    }
-    return false;
+    return hm->body.len > 0; 
 }
 
 static void log_request(struct mg_http_message *hm) {
     char uri_str[256] = {0};
     size_t ulen = hm->uri.len < 255 ? hm->uri.len : 255;
     memcpy(uri_str, hm->uri.buf, ulen);
-    printf("\n[HTTP] %s %s\n", is_post(hm) ? "POST" : "GET", uri_str);
+    printf("\n[HTTP] Request to %s\n", uri_str);
 }
 
 // --- Mongoose Event Handler ---
 static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
     if (ev == MG_EV_ACCEPT) {
+        // FIX: Removed .ca field entirely
         struct mg_tls_opts opts;
         memset(&opts, 0, sizeof(opts)); 
         opts.cert = s_cert; 
@@ -273,21 +267,18 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
             mg_http_reply(c, 404, headers, "Not Found");
         }
         
-        // ALWAYS wipe derived key from memory after request is done
         if (is_authed) OPENSSL_cleanse(session.derived_key, AES_KEY_SIZE);
     }
 }
 
 int main(void) {
-    // Read the certificates into memory FIRST
     char* cert_data = read_file("cert.pem");
     char* key_data = read_file("key.pem");
     if (!cert_data || !key_data) {
-        printf("[ERROR] cert.pem or key.pem not found. Run the openssl command first!\n");
+        printf("[ERROR] cert.pem or key.pem not found.\n");
         return 1;
     }
     
-    // Explicitly set the length of the string to avoid OpenSSL parsing issues
     s_cert.buf = cert_data;
     s_cert.len = strlen(cert_data);
     s_key.buf = key_data;
