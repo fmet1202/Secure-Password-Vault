@@ -47,14 +47,16 @@ static char* render_template(const char* tmpl, const char* key, const char* val)
 
 static char* get_flash_message(struct mg_http_message *hm) {
     char buf[256] = {0};
-    if (mg_http_get_var(&hm->query, "err", buf, sizeof(buf)) > 0) {
+    struct mg_str *qs = hm->query.len > 0 ? &hm->query : &hm->uri;
+    
+    if (mg_http_get_var(qs, "err", buf, sizeof(buf)) > 0) {
         char* out = calloc(1, 512);
-        snprintf(out, 512, "<p style='color: #fff; background: #d9534f; padding: 10px; border-radius: 5px;'>%s</p>", buf);
+        snprintf(out, 512, "<p style='color: #fff; background: #d9534f; padding: 10px; border-radius: 5px;'>❌ %s</p>", buf);
         return out;
     }
-    if (mg_http_get_var(&hm->query, "msg", buf, sizeof(buf)) > 0) {
+    if (mg_http_get_var(qs, "msg", buf, sizeof(buf)) > 0) {
         char* out = calloc(1, 512);
-        snprintf(out, 512, "<p style='color: #fff; background: #5cb85c; padding: 10px; border-radius: 5px;'>%s</p>", buf);
+        snprintf(out, 512, "<p style='color: #fff; background: #5cb85c; padding: 10px; border-radius: 5px;'>✅ %s</p>", buf);
         return out;
     }
     return strdup("");
@@ -66,8 +68,7 @@ static char* web_render_vault(LoggedInUser* session, const char* csrf_token, con
     
     if (search_query && strlen(search_query) > 0) {
         char search_pattern[512];
-        snprintf(search_pattern, sizeof(search_pattern), "%%%s%%", search_query);
-        
+        snprintf(search_pattern, sizeof(search_pattern), "%%%s%%", search_query); 
         const char* params[2] = { uid_str, search_pattern };
         res = PQexecParams(db_get_conn(),
             "SELECT id, site, username, encrypted_password, iv, tag FROM vault_entries "
@@ -128,12 +129,16 @@ static char* web_render_vault(LoggedInUser* session, const char* csrf_token, con
 }
 
 static bool is_route(struct mg_http_message *hm, const char *path) {
-    size_t len = strlen(path);
-    return hm->uri.len == len && memcmp(hm->uri.buf, path, len) == 0;
+    size_t path_len = strlen(path);
+    const char *qmark = memchr(hm->uri.buf, '?', hm->uri.len);
+    size_t actual_len = qmark ? (size_t)(qmark - hm->uri.buf) : hm->uri.len;
+    return actual_len == path_len && memcmp(hm->uri.buf, path, path_len) == 0;
 }
 
 static bool is_post(struct mg_http_message *hm) {
-    return hm->method == MG_HTTP_POST;
+    if (hm->uri.buf == NULL) return false;
+    const char *p = hm->uri.buf;
+    return (p[-1] == ' ' && p[-2] == 'T' && p[-3] == 'S' && p[-4] == 'O' && p[-5] == 'P');
 }
 
 static void log_request(struct mg_http_message *hm) {
@@ -155,6 +160,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
         LoggedInUser session = {0};
         
         log_request(hm);
+
         session_extract_cookie(hm, session_cookie, sizeof(session_cookie));
         bool is_authed = session_validate(session_cookie, &session, session_csrf);
 
@@ -213,11 +219,19 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 free(html); free(flash); free(final);
             }
         }
+        else if (is_route(hm, "/api/generate")) {
+            if (!is_authed) { mg_http_reply(c, 401, "", "Unauthorized"); return; }
+            char secure_pass[21]; 
+            crypto_generate_password(secure_pass, sizeof(secure_pass));
+            mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s", secure_pass);
+            OPENSSL_cleanse(secure_pass, sizeof(secure_pass));
+        }
         else if (is_route(hm, "/vault")) {
             if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
             
             char search_query[256] = {0};
-            mg_http_get_var(&hm->query, "q", search_query, sizeof(search_query));
+            struct mg_str *qs = hm->query.len > 0 ? &hm->query : &hm->uri;
+            mg_http_get_var(qs, "q", search_query, sizeof(search_query));
             
             char* html = read_file("assets/vault.html");
             char* flash = get_flash_message(hm);
@@ -280,20 +294,19 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 OPENSSL_cleanse(pass, sizeof(pass));
             } else {
                 char id_str[16]={0};
-                mg_http_get_var(&hm->query, "id", id_str, sizeof(id_str));
-                char site[256]={0}, user[256]={0}, pass[256]={0};
+                struct mg_str *qs = hm->query.len > 0 ? &hm->query : &hm->uri;
+                mg_http_get_var(qs, "id", id_str, sizeof(id_str));
                 
+                char site[256]={0}, user[256]={0}, pass[256]={0};
                 if (vault_get_entry(&session, atoi(id_str), site, user, pass)) {
                     char* html = read_file("assets/edit_entry.html");
-                    char* flash = get_flash_message(hm);
-                    char *t0 = render_template(html, "{{MESSAGE}}", flash);
-                    char *t1 = render_template(t0, "{{ID}}", id_str);
+                    char *t1 = render_template(html, "{{ID}}", id_str);
                     char *t2 = render_template(t1, "{{SITE}}", site);
                     char *t3 = render_template(t2, "{{USER}}", user);
                     char *t4 = render_template(t3, "{{PASS}}", pass);
                     char *final = render_template(t4, "{{CSRF_TOKEN}}", session_csrf);
                     mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
-                    free(html); free(flash); free(t0); free(t1); free(t2); free(t3); free(t4); free(final);
+                    free(html); free(t1); free(t2); free(t3); free(t4); free(final);
                 } else {
                     mg_http_reply(c, 302, "Location: /vault?err=Entry+not+found\r\n", "");
                 }
@@ -316,19 +329,11 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 mg_http_reply(c, 302, "Location: /vault\r\n", "");
             }
         }
-        else if (is_route(hm, "/api/generate")) {
-            if (!is_authed) { mg_http_reply(c, 401, "", "Unauthorized"); return; }
-            char secure_pass[21]; 
-            crypto_generate_password(secure_pass, sizeof(secure_pass));
-            mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s", secure_pass);
-            OPENSSL_cleanse(secure_pass, sizeof(secure_pass));
-        }
         else if (is_route(hm, "/logout")) {
             session_destroy(session_cookie);
             char out_hdrs[512];
             snprintf(out_hdrs, sizeof(out_hdrs), 
-                "%s"
-                "Location: /login?msg=You+have+been+logged+out.\r\n"
+                "%sLocation: /login?msg=You+have+been+logged+out.\r\n"
                 "Set-Cookie: session_id=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0\r\n", SEC_HEADERS);
             mg_http_reply(c, 302, out_hdrs, "");
         }
@@ -344,14 +349,12 @@ int main(void) {
     char* cert_data = read_file("cert.pem");
     char* key_data = read_file("key.pem");
     if (!cert_data || !key_data) {
-        printf("[ERROR] cert.pem or key.pem not found. Run the openssl command first!\n");
+        printf("[ERROR] cert.pem or key.pem not found.\n");
         return 1;
     }
     
-    s_cert.buf = cert_data;
-    s_cert.len = strlen(cert_data);
-    s_key.buf = key_data;
-    s_key.len = strlen(key_data);
+    s_cert.buf = cert_data; s_cert.len = strlen(cert_data);
+    s_key.buf = key_data;   s_key.len = strlen(key_data);
 
     if (!db_init("dbname=securevault_db user=vault_user password=vault_password host=localhost")) return 1;
 
@@ -364,7 +367,6 @@ int main(void) {
 
     mg_mgr_free(&mgr);
     db_close();
-    free(cert_data);
-    free(key_data);
+    free(cert_data); free(key_data);
     return 0;
 }

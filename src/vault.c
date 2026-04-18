@@ -166,7 +166,15 @@ bool vault_update(LoggedInUser* session, int entry_id, const char* site, const c
         "WHERE id=$6 AND user_id=$7",
         7, NULL, params, lengths, formats, 0);
         
-    bool success = (PQresultStatus(res) == PGRES_COMMAND_OK);
+    int affected = atoi(PQcmdTuples(res));
+    bool success = (PQresultStatus(res) == PGRES_COMMAND_OK && affected > 0);
+    
+    if (!success) {
+        printf("[VAULT ERR] Update failed for Entry %d. Rows affected: %d. Error: %s\n", entry_id, affected, PQerrorMessage(db_get_conn()));
+    } else {
+        printf("[VAULT LOG] Successfully updated Entry %d\n", entry_id);
+    }
+    
     PQclear(res);
     OPENSSL_cleanse(ct, sizeof(ct)); 
     return success;
