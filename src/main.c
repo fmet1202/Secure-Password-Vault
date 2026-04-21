@@ -136,16 +136,16 @@ static bool is_route(struct mg_http_message *hm, const char *path) {
 }
 
 static bool is_post(struct mg_http_message *hm) {
-    if (hm->uri.buf == NULL) return false;
-    const char *p = hm->uri.buf;
-    return (p[-1] == ' ' && p[-2] == 'T' && p[-3] == 'S' && p[-4] == 'O' && p[-5] == 'P');
+    return hm->method == MG_HTTP_POST;
 }
 
 static void log_request(struct mg_http_message *hm) {
     char uri_str[256] = {0};
     size_t ulen = hm->uri.len < 255 ? hm->uri.len : 255;
     memcpy(uri_str, hm->uri.buf, ulen);
-    printf("\n[HTTP] %s %s\n", is_post(hm) ? "POST" : "GET", uri_str);
+    
+    const char* method_str = (hm->method == MG_HTTP_POST) ? "POST" : "GET";
+    printf("\n[HTTP] %s %s\n", method_str, uri_str);
 }
 
 static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
@@ -160,7 +160,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
         LoggedInUser session = {0};
         
         log_request(hm);
-
         session_extract_cookie(hm, session_cookie, sizeof(session_cookie));
         bool is_authed = session_validate(session_cookie, &session, session_csrf);
 
@@ -191,7 +190,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                     mg_http_reply(c, 302, "Location: /login?err=Invalid+Username+or+Password\r\n", "");
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
-            } else {
+            } else { 
                 if (is_authed) { mg_http_reply(c, 302, "Location: /vault\r\n", ""); return; }
                 char* html = read_file("assets/login.html");
                 char* flash = get_flash_message(hm);
@@ -211,20 +210,13 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                     mg_http_reply(c, 302, "Location: /register?err=Registration+failed.+Username+may+be+taken.\r\n", "");
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
-            } else {
+            } else { 
                 char* html = read_file("assets/register.html");
                 char* flash = get_flash_message(hm);
                 char* final = render_template(html, "{{MESSAGE}}", flash);
                 mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
                 free(html); free(flash); free(final);
             }
-        }
-        else if (is_route(hm, "/api/generate")) {
-            if (!is_authed) { mg_http_reply(c, 401, "", "Unauthorized"); return; }
-            char secure_pass[21]; 
-            crypto_generate_password(secure_pass, sizeof(secure_pass));
-            mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s", secure_pass);
-            OPENSSL_cleanse(secure_pass, sizeof(secure_pass));
         }
         else if (is_route(hm, "/vault")) {
             if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
@@ -245,7 +237,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
             free(html); free(flash); free(rows); free(t1); free(t2); free(final);
         }
         else if (is_route(hm, "/vault/add")) {
-            if (!is_authed) { mg_http_reply(c, 302, "Location: /login\r\n", ""); return; }
+            if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
             if (is_post(hm)) {
                 char site[256]={0}, user[256]={0}, pass[256]={0}, csrf[65]={0};
                 mg_http_get_var(&hm->body, "site", site, sizeof(site));
@@ -263,7 +255,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                     mg_http_reply(c, 302, "Location: /vault/add?err=Security+Validation+Failed+(CSRF)\r\n", "");
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
-            } else {
+            } else { 
                 char* html = read_file("assets/add_entry.html");
                 char* flash = get_flash_message(hm);
                 char* t1 = render_template(html, "{{MESSAGE}}", flash);
@@ -273,7 +265,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
             }
         }
         else if (is_route(hm, "/vault/edit")) {
-            if (!is_authed) { mg_http_reply(c, 302, "Location: /login\r\n", ""); return; }
+            if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
             if (is_post(hm)) {
                 char id_str[16]={0}, site[256]={0}, user[256]={0}, pass[256]={0}, csrf[65]={0};
                 mg_http_get_var(&hm->body, "entry_id", id_str, sizeof(id_str));
@@ -292,12 +284,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                     mg_http_reply(c, 302, "Location: /vault?err=CSRF+Validation+Failed\r\n", "");
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
-            } else {
+            } else { 
                 char id_str[16]={0};
                 struct mg_str *qs = hm->query.len > 0 ? &hm->query : &hm->uri;
                 mg_http_get_var(qs, "id", id_str, sizeof(id_str));
-                
                 char site[256]={0}, user[256]={0}, pass[256]={0};
+                
                 if (vault_get_entry(&session, atoi(id_str), site, user, pass)) {
                     char* html = read_file("assets/edit_entry.html");
                     char *t1 = render_template(html, "{{ID}}", id_str);
@@ -329,6 +321,13 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 mg_http_reply(c, 302, "Location: /vault\r\n", "");
             }
         }
+        else if (is_route(hm, "/api/generate")) {
+            if (!is_authed) { mg_http_reply(c, 401, "", "Unauthorized"); return; }
+            char secure_pass[21]; 
+            crypto_generate_password(secure_pass, sizeof(secure_pass));
+            mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s", secure_pass);
+            OPENSSL_cleanse(secure_pass, sizeof(secure_pass));
+        }
         else if (is_route(hm, "/logout")) {
             session_destroy(session_cookie);
             char out_hdrs[512];
@@ -338,7 +337,7 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
             mg_http_reply(c, 302, out_hdrs, "");
         }
         else {
-            mg_http_reply(c, 404, headers, "Not Found");
+            mg_http_reply(c, 302, "Location: /login\r\n", "");
         }
         
         if (is_authed) OPENSSL_cleanse(session.derived_key, AES_KEY_SIZE);
@@ -349,12 +348,14 @@ int main(void) {
     char* cert_data = read_file("cert.pem");
     char* key_data = read_file("key.pem");
     if (!cert_data || !key_data) {
-        printf("[ERROR] cert.pem or key.pem not found.\n");
+        printf("[ERROR] cert.pem or key.pem not found. Run the openssl command first!\n");
         return 1;
     }
     
-    s_cert.buf = cert_data; s_cert.len = strlen(cert_data);
-    s_key.buf = key_data;   s_key.len = strlen(key_data);
+    s_cert.buf = cert_data;
+    s_cert.len = strlen(cert_data);
+    s_key.buf = key_data;
+    s_key.len = strlen(key_data);
 
     if (!db_init("dbname=securevault_db user=vault_user password=vault_password host=localhost")) return 1;
 
@@ -367,6 +368,7 @@ int main(void) {
 
     mg_mgr_free(&mgr);
     db_close();
-    free(cert_data); free(key_data);
+    free(cert_data);
+    free(key_data);
     return 0;
 }
