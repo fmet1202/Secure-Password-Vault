@@ -1,32 +1,114 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>SecureVault - Edit Entry</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --color-primary: #595e6f; --color-primary-dim: #4d5263;
+            --color-surface: #f7f9fb; --color-surface-container-lowest: #ffffff;
+            --color-surface-container-low: #f0f4f7; --color-surface-container-high: #e4e2e6;
+            --color-surface-container-highest: #d9e4ea; --color-on-surface: #2a3439;
+            --color-on-surface-variant: #6b7280; --color-outline-variant: #d1d5db;
+        }
+        .dark {
+            --color-primary: #6366f1; --color-primary-dim: #4f46e5;
+            --color-surface: #111827; --color-surface-container-lowest: #1f2937;
+            --color-surface-container-low: #374151; --color-surface-container-high: #4b5563;
+            --color-surface-container-highest: #6b7280; --color-on-surface: #f3f4f6;
+            --color-on-surface-variant: #9ca3af; --color-outline-variant: #374151;
+        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
+    </style>
+    <script>
+        function initTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+        initTheme();
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+            primary: "var(--color-primary)", "primary-dim": "var(--color-primary-dim)",
+            surface: "var(--color-surface)", "surface-container-lowest": "var(--color-surface-container-lowest)",
+            "surface-container-low": "var(--color-surface-container-low)", "surface-container-high": "var(--color-surface-container-high)",
+            "surface-container-highest": "var(--color-surface-container-highest)", "on-surface": "var(--color-on-surface)",
+            "on-surface-variant": "var(--color-on-surface-variant)", "outline-variant": "var(--color-outline-variant)"
+        }, fontFamily: { headline: ["Manrope"], body: ["Inter"], label: ["Inter"] } } } }
+
+        function toggleTheme() {
+            const html = document.documentElement; html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').textContent = isDark ? 'light_mode' : 'dark_mode';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('theme-icon');
+            if (icon) icon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+        });
+
+        function generatePassword() {
+            fetch('/api/generate')
+                .then(r => r.text())
+                .then(t => {
+                    let lines = t.split('\n');
+                    let cleanPass = lines[lines.length - 1].trim();
+                    document.getElementById('site_pass').value = cleanPass;
+                });
+        }
+    </script>
 </head>
-<body>
-    <header>
-        <h1>Edit Credential</h1>
+<body class="bg-surface text-on-surface font-body antialiased min-h-screen">
+    <header class="bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50">
+        <span class="text-xl font-extrabold tracking-tight text-on-surface font-headline">SecureVault</span>
+        <div class="flex items-center gap-4">
+            <button id="theme-btn" onclick="toggleTheme()" class="p-2 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors duration-200 rounded-full">
+                <span id="theme-icon" class="material-symbols-outlined text-xl">dark_mode</span>
+            </button>
+            <a href="/vault" class="text-on-surface-variant hover:text-on-surface transition-colors font-semibold text-sm flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span> Back to Vault
+            </a>
+        </div>
     </header>
-    <main>
+
+    <main class="max-w-[700px] mx-auto px-6 py-12 flex flex-col gap-8">
+        <div class="flex flex-col gap-2">
+            <h1 class="font-headline text-3xl font-bold text-on-surface">Edit Credential</h1>
+        </div>
         {{MESSAGE}}
-        <form action="/vault/edit" method="POST">
-            <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
-            <input type="hidden" name="entry_id" value="{{ID}}">
-            <p><label>Site / URL</label><input type="text" name="site" value="{{SITE}}" required></p>
-            <p><label>Username</label><input type="text" name="site_user" value="{{USER}}" required></p>
-            <p>
-                <label>Password</label>
-                <input type="text" id="site_pass" name="site_pass" value="{{PASS}}" required>
-            </p>
-            <p>
-                <button type="button" class="notice" onclick="fetch('/api/generate').then(r=>r.text()).then(t=>document.getElementById('site_pass').value=t)">🎲 Generate New Password</button>
-            </p>
-            <button type="submit">Update Entry</button>
-        </form>
-        <p><a href="/vault">Back to Vault</a></p>
+        <div class="bg-surface-container-lowest rounded-lg p-8 shadow-xl shadow-black/5 border border-outline-variant/30">
+            <form action="/vault/edit" method="POST" class="flex flex-col gap-6">
+                <input type="hidden" name="csrf_token" value="{{CSRF_TOKEN}}">
+                <input type="hidden" name="entry_id" value="{{ID}}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label">Site / URL</label>
+                        <input type="text" name="site" value="{{SITE}}" required class="bg-surface border border-outline-variant/50 rounded focus:ring-2 focus:ring-primary/50 focus:border-primary px-4 py-3 text-sm font-body text-on-surface w-full transition-all outline-none">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label">Username</label>
+                        <input type="text" name="site_user" value="{{USER}}" required class="bg-surface border border-outline-variant/50 rounded focus:ring-2 focus:ring-primary/50 focus:border-primary px-4 py-3 text-sm font-body text-on-surface w-full transition-all outline-none">
+                    </div>
+                </div>
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label">Password</label>
+                    <div class="flex gap-3 items-center">
+                        <input type="text" id="site_pass" name="site_pass" value="{{PASS}}" required class="bg-surface border border-outline-variant/50 rounded focus:ring-2 focus:ring-primary/50 focus:border-primary px-4 py-3 text-sm font-body text-on-surface w-full transition-all outline-none font-mono">
+                        <button type="button" onclick="generatePassword()" class="bg-surface border border-outline-variant/50 hover:bg-surface-container-high text-on-surface font-semibold text-sm px-4 py-3 rounded transition-colors whitespace-nowrap flex items-center gap-2 shadow-sm">
+                            <span class="material-symbols-outlined text-[18px]">casino</span> Generate New
+                        </button>
+                    </div>
+                </div>
+                <div class="flex justify-end pt-4 mt-2 border-t border-outline-variant/30">
+                    <button type="submit" class="bg-gradient-to-b from-primary to-primary-dim text-white font-body font-medium px-8 py-3 rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 text-sm shadow-lg shadow-primary/20">
+                        <span class="material-symbols-outlined text-[18px]">update</span> Update Credential
+                    </button>
+                </div>
+            </form>
+        </div>
     </main>
 </body>
 </html>

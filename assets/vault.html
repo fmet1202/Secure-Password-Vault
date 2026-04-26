@@ -1,41 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>SecureVault - My Vault</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
-</head>
-<body>
-    <header>
-        <h1>My Vault</h1>
-        <nav>
-            <a href="/vault/add">Add New Entry</a>
-            <a href="/logout">Logout</a>
-        </nav>
-    </header>
-    <main>
-        {{MESSAGE}}
-        
-        <form method="GET" action="/vault" style="display: flex; gap: 10px; margin-bottom: 1rem;">
-            <input type="text" name="q" placeholder="Search site or username..." style="flex: 1;">
-            <button type="submit" style="margin: 0;">Search</button>
-            <a href="/vault" class="button" style="margin: 0; background: #999; border: none;">Clear</a>
-        </form>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --color-primary: #595e6f; --color-primary-dim: #4d5263;
+            --color-surface: #f7f9fb; --color-surface-container-lowest: #ffffff;
+            --color-surface-container-low: #f0f4f7; --color-surface-container-high: #e4e2e6;
+            --color-surface-container-highest: #d9e4ea; --color-on-surface: #2a3439;
+            --color-on-surface-variant: #6b7280; --color-outline-variant: #d1d5db;
+        }
+        .dark {
+            --color-primary: #6366f1; --color-primary-dim: #4f46e5;
+            --color-surface: #111827; --color-surface-container-lowest: #1f2937;
+            --color-surface-container-low: #374151; --color-surface-container-high: #4b5563;
+            --color-surface-container-highest: #6b7280; --color-on-surface: #f3f4f6;
+            --color-on-surface-variant: #9ca3af; --color-outline-variant: #374151;
+        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20; }
+        .pw-hidden { -webkit-text-security: disc; text-security: disc; letter-spacing: 0.2em; font-family: monospace; }
+        .pw-visible { -webkit-text-security: none; text-security: none; font-family: monospace; }
+    </style>
+    <script>
+        function initTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+        initTheme();
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+            primary: "var(--color-primary)", "primary-dim": "var(--color-primary-dim)",
+            surface: "var(--color-surface)", "surface-container-lowest": "var(--color-surface-container-lowest)",
+            "surface-container-low": "var(--color-surface-container-low)", "surface-container-high": "var(--color-surface-container-high)",
+            "surface-container-highest": "var(--color-surface-container-highest)", "on-surface": "var(--color-on-surface)",
+            "on-surface-variant": "var(--color-on-surface-variant)", "outline-variant": "var(--color-outline-variant)"
+        }, fontFamily: { headline: ["Manrope"], body: ["Inter"], label: ["Inter"] } } } }
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Site</th>
-                    <th>Username</th>
-                    <th>Password</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{VAULT_ENTRIES}}
-            </tbody>
-        </table>
+        function toggleTheme() {
+            const html = document.documentElement; html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').textContent = isDark ? 'light_mode' : 'dark_mode';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('theme-icon');
+            if (icon) icon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+        });
+
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = document.activeElement;
+                if (btn && btn.tagName === 'BUTTON') {
+                    const icon = btn.querySelector('.material-symbols-outlined');
+                    if (icon && icon.textContent.trim() === 'content_copy') {
+                        icon.textContent = 'check';
+                        setTimeout(() => { icon.textContent = 'content_copy'; }, 2000);
+                    }
+                }
+            });
+        }
+        function togglePassword(btn) {
+            const span = btn.previousElementSibling;
+            if (span.classList.contains('pw-hidden')) {
+                span.classList.remove('pw-hidden'); span.classList.add('pw-visible');
+                btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>';
+            } else {
+                span.classList.remove('pw-visible'); span.classList.add('pw-hidden');
+                btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>';
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased min-h-screen">
+    <header class="bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 flex justify-between items-center w-full px-8 py-4 sticky top-0 z-50">
+        <span class="text-xl font-extrabold tracking-tight text-on-surface font-headline">SecureVault</span>
+        <div class="flex items-center gap-4">
+            <button id="theme-btn" onclick="toggleTheme()" class="p-2 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors duration-200 rounded-full">
+                <span id="theme-icon" class="material-symbols-outlined text-xl">dark_mode</span>
+            </button>
+            <a href="/vault/add" class="bg-surface-container-low border border-outline-variant/30 hover:bg-surface-container-high text-on-surface font-semibold text-sm px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">add</span> Add Entry
+            </a>
+            <a href="/logout" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low transition-all text-sm font-semibold tracking-wider px-4 py-2 rounded-lg flex items-center gap-2">
+                <span class="material-symbols-outlined text-[18px]">logout</span> Logout
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-[1000px] mx-auto px-6 py-12 flex flex-col gap-8">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div class="flex flex-col gap-2">
+                <h1 class="font-headline text-3xl font-bold text-on-surface">Your Vault</h1>
+                <p class="text-on-surface-variant font-medium">Manage and secure your credentials.</p>
+            </div>
+            <form method="GET" action="/vault" class="relative w-full md:w-80 flex items-center">
+                <span class="material-symbols-outlined absolute left-4 text-on-surface-variant">search</span>
+                <input type="text" name="q" placeholder="Search vault..." class="bg-surface-container-lowest border border-outline-variant/30 rounded-full focus:ring-2 focus:ring-primary/20 focus:border-primary pl-11 pr-20 py-2.5 text-sm font-body text-on-surface w-full transition-all outline-none shadow-sm">
+                <a href="/vault" class="absolute right-4 text-xs font-bold text-on-surface-variant hover:text-on-surface uppercase tracking-wider">Clear</a>
+            </form>
+        </div>
+
+        {{MESSAGE}}
+
+        <div class="flex flex-col gap-3">
+            {{VAULT_ENTRIES}}
+        </div>
     </main>
 </body>
 </html>

@@ -1,31 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <title>SecureVault - Login</title>
-    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+    <style>
+        :root {
+            --color-primary: #595e6f; --color-primary-dim: #4d5263;
+            --color-surface: #f7f9fb; --color-surface-container-lowest: #ffffff;
+            --color-surface-container-low: #f0f4f7; --color-surface-container-high: #e4e2e6;
+            --color-surface-container-highest: #d9e4ea; --color-on-surface: #2a3439;
+            --color-on-surface-variant: #6b7280; --color-outline-variant: #d1d5db;
+        }
+        .dark {
+            --color-primary: #6366f1; --color-primary-dim: #4f46e5;
+            --color-surface: #111827; --color-surface-container-lowest: #1f2937;
+            --color-surface-container-low: #374151; --color-surface-container-high: #4b5563;
+            --color-surface-container-highest: #6b7280; --color-on-surface: #f3f4f6;
+            --color-on-surface-variant: #9ca3af; --color-outline-variant: #374151;
+        }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    </style>
+    <script>
+        function initTheme() {
+            if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+        initTheme();
+        tailwind.config = { darkMode: "class", theme: { extend: { colors: {
+            primary: "var(--color-primary)", "primary-dim": "var(--color-primary-dim)",
+            surface: "var(--color-surface)", "surface-container-lowest": "var(--color-surface-container-lowest)",
+            "surface-container-low": "var(--color-surface-container-low)", "surface-container-high": "var(--color-surface-container-high)",
+            "surface-container-highest": "var(--color-surface-container-highest)", "on-surface": "var(--color-on-surface)",
+            "on-surface-variant": "var(--color-on-surface-variant)", "outline-variant": "var(--color-outline-variant)"
+        }, fontFamily: { headline: ["Manrope"], body: ["Inter"], label: ["Inter"] } } } }
+
+        function toggleTheme() {
+            const html = document.documentElement; html.classList.toggle('dark');
+            const isDark = html.classList.contains('dark');
+            localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            document.getElementById('theme-icon').textContent = isDark ? 'light_mode' : 'dark_mode';
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            const icon = document.getElementById('theme-icon');
+            if (icon) icon.textContent = document.documentElement.classList.contains('dark') ? 'light_mode' : 'dark_mode';
+        });
+    </script>
 </head>
-<body>
-    <header>
-        <h1>SecureVault</h1>
-        <p>Enterprise-grade credential management.</p>
+<body class="bg-surface text-on-surface font-body antialiased min-h-screen flex flex-col">
+    <header class="flex justify-end p-6">
+        <button onclick="toggleTheme()" class="p-2 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface transition-colors duration-200 rounded-full">
+            <span id="theme-icon" class="material-symbols-outlined text-xl">dark_mode</span>
+        </button>
     </header>
-    <main>
-        {{MESSAGE}}
-        <h3>Login</h3>
-        <form action="/login" method="POST">
-            <p>
-                <label>Username</label>
-                <input type="text" name="username" required>
-            </p>
-            <p>
-                <label>Master Password</label>
-                <input type="password" name="password" required>
-            </p>
-            <button type="submit">Unlock Vault</button>
-        </form>
-        <p><a href="/register">Don't have an account? Register here.</a></p>
+    <main class="flex-grow flex items-center justify-center p-6 -mt-16">
+        <div class="w-full max-w-md flex flex-col gap-8">
+            <div class="text-center">
+                <h1 class="font-headline text-3xl font-bold text-on-surface tracking-tight">SecureVault</h1>
+                <p class="text-on-surface-variant mt-2 font-medium">Enterprise-grade credential management.</p>
+            </div>
+            {{MESSAGE}}
+            <div class="bg-surface-container-lowest rounded-lg p-8 shadow-xl shadow-black/5 border border-outline-variant/30 flex flex-col gap-6">
+                <h2 class="font-headline text-xl font-bold">Login</h2>
+                <form action="/login" method="POST" class="flex flex-col gap-5">
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label">Username</label>
+                        <input type="text" name="username" required class="bg-surface border border-outline-variant/50 rounded focus:ring-2 focus:ring-primary/50 focus:border-primary px-4 py-3 text-sm font-body text-on-surface w-full transition-all outline-none">
+                    </div>
+                    <div class="flex flex-col gap-1.5">
+                        <label class="text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label">Master Password</label>
+                        <input type="password" name="password" required class="bg-surface border border-outline-variant/50 rounded focus:ring-2 focus:ring-primary/50 focus:border-primary px-4 py-3 text-sm font-body text-on-surface w-full transition-all outline-none">
+                    </div>
+                    <button type="submit" class="mt-2 bg-gradient-to-b from-primary to-primary-dim text-white font-body font-medium px-6 py-3 rounded-lg hover:opacity-90 transition-opacity text-sm shadow-lg shadow-primary/20">
+                        Unlock Vault
+                    </button>
+                </form>
+            </div>
+            <div class="text-center">
+                <p class="text-sm text-on-surface-variant font-medium">
+                    Don't have an account? <a href="/register" class="text-primary font-bold hover:underline">Register here.</a>
+                </p>
+            </div>
+        </div>
     </main>
 </body>
 </html>
