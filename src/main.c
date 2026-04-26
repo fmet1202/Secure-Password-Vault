@@ -82,11 +82,11 @@ static char* web_render_vault(LoggedInUser* session, const char* csrf_token, con
             1, NULL, params, NULL, NULL, 1);
     }
         
-    char rows_html[32000] = {0};
+    char rows_html[32000] = {0}; 
     int offset = 0;
     
     if (PQntuples(res) == 0) {
-        offset += snprintf(rows_html, sizeof(rows_html), "<div class='text-center p-8 text-on-surface-variant font-medium'>No entries found in your vault.</div>");
+        offset += snprintf(rows_html, sizeof(rows_html), "<div class='text-center p-8 text-on-surface-variant font-medium border-t border-slate-50'>No entries found in your vault.</div>");
     }
     
     for (int i = 0; i < PQntuples(res); i++) {
@@ -104,45 +104,47 @@ static char* web_render_vault(LoggedInUser* session, const char* csrf_token, con
         uint8_t* tag = (uint8_t*)PQgetvalue(res, i, 5);
         
         uint8_t pt[256] = {0};
-        bool decrypted = ct_len < 256 && crypto_aead_decrypt(ct, ct_len, tag, session->derived_key, iv, pt);
+        bool decrypted = crypto_aead_decrypt(ct, ct_len, tag, session->derived_key, iv, pt);
         
         offset += snprintf(rows_html + offset, sizeof(rows_html) - offset,
-            "<div class='bg-surface-container-lowest rounded-lg p-5 shadow-[0_4px_20px_rgba(42,52,57,0.06)] border border-outline-variant/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 group transition-all hover:shadow-[0_8px_30px_rgba(42,52,57,0.12)] hover:bg-surface-container-low/50 mb-3'>"
-            "    <div class='flex items-center gap-4 min-w-[200px]'>"
-            "        <div class='w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary'>"
+            "<div class='group px-6 py-4 hover:bg-indigo-50/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 %s'>"
+            "    <div class='flex items-center gap-4'>"
+            "        <div class='w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-white group-hover:shadow-sm transition-all'>"
             "            <span class='material-symbols-outlined'>lock</span>"
             "        </div>"
-            "        <div class='flex flex-col'>"
-            "            <span class='font-headline font-bold text-on-surface'>%s</span>"
-            "            <span class='font-body text-xs text-on-surface-variant mt-0.5'>%s</span>"
+            "        <div>"
+            "            <h4 class='font-h3 text-[16px] text-slate-900 leading-none mb-1'>%s</h4>"
+            "            <p class='font-mono text-sm text-on-surface-variant'>%s</p>"
             "        </div>"
             "    </div>"
-            "    <div class='flex items-center gap-2 w-full md:w-auto bg-surface-container-low rounded p-1.5 border border-outline-variant/20 font-mono text-sm px-4 py-2 flex-grow max-w-[280px] justify-between'>"
-            "        <span class='text-on-surface-variant tracking-widest mt-1 pw-hidden'>%s</span>"
-            "        <button onclick='togglePassword(this)' class='text-outline-variant hover:text-primary transition-colors p-1 rounded hover:bg-surface-container-lowest' title='Toggle Visibility'>"
-            "            <span class='material-symbols-outlined text-[18px]'>visibility</span>"
-            "        </button>"
-            "    </div>"
-            "    <div class='flex items-center gap-2 w-full md:w-auto justify-end'>"
-            "        <button onclick='copyToClipboard(\"%s\")' class='bg-surface border border-outline-variant/30 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-body text-xs font-medium px-3 py-2 rounded flex items-center gap-1.5 transition-colors'>"
-            "            <span class='material-symbols-outlined text-[16px]'>content_copy</span> User"
-            "        </button>"
-            "        <button onclick='copyToClipboard(\"%s\")' class='bg-surface border border-outline-variant/30 hover:bg-surface-container-low text-on-surface-variant hover:text-on-surface font-body text-xs font-medium px-3 py-2 rounded flex items-center gap-1.5 transition-colors'>"
-            "            <span class='material-symbols-outlined text-[16px]'>content_copy</span> Pass"
-            "        </button>"
-            "        <div class='w-[1px] h-6 bg-outline-variant/30 mx-1'></div>"
-            "        <a href='/vault/edit?id=%d' class='text-outline-variant hover:text-primary transition-colors p-2 rounded hover:bg-surface-container-low' title='Edit'>"
-            "            <span class='material-symbols-outlined text-[18px]'>edit</span>"
-            "        </a>"
-            "        <form action='/vault/delete' method='POST' style='margin:0;' onsubmit='return confirm(\"Delete this credential?\");'>"
-            "            <input type='hidden' name='csrf_token' value='%s'>"
-            "            <input type='hidden' name='entry_id' value='%d'>"
-            "            <button type='submit' class='text-outline-variant hover:text-[#9f403d] transition-colors p-2 rounded hover:bg-[#9f403d]/10' title='Delete'>"
-            "                <span class='material-symbols-outlined text-[18px]'>delete</span>"
+            "    <div class='flex items-center gap-4'>"
+            "        <div class='flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg font-mono text-sm'>"
+            "            <span class='tracking-widest text-slate-900 pw-hidden'>%s</span>"
+            "            <button onclick='togglePassword(this)' class='text-outline hover:text-primary transition-colors'>"
+            "                <span class='material-symbols-outlined text-[18px]'>visibility</span>"
             "            </button>"
-            "        </form>"
+            "        </div>"
+            "        <div class='flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity'>"
+            "            <button onclick='copyToClipboard(\"%s\")' class='p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-on-surface-variant' title='Copy User'>"
+            "                <span class='material-symbols-outlined text-[20px]'>person</span>"
+            "            </button>"
+            "            <button onclick='copyToClipboard(\"%s\")' class='p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-on-surface-variant' title='Copy Password'>"
+            "                <span class='material-symbols-outlined text-[20px]'>content_copy</span>"
+            "            </button>"
+            "            <a href='/vault/edit?id=%d' class='p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-on-surface-variant' title='Edit'>"
+            "                <span class='material-symbols-outlined text-[20px]'>edit</span>"
+            "            </a>"
+            "            <form action='/vault/delete' method='POST' class='m-0 p-0 inline' onsubmit='return confirm(\"Delete this credential?\");'>"
+            "                <input type='hidden' name='csrf_token' value='%s'>"
+            "                <input type='hidden' name='entry_id' value='%d'>"
+            "                <button type='submit' class='p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all text-on-surface-variant' title='Delete'>"
+            "                    <span class='material-symbols-outlined text-[20px]'>delete</span>"
+            "                </button>"
+            "            </form>"
+            "        </div>"
             "    </div>"
             "</div>",
+            i > 0 ? "border-t border-slate-50" : "",
             site, user, decrypted ? (char*)pt : "ERROR", user, decrypted ? (char*)pt : "", id, csrf_token, id);
         
         OPENSSL_cleanse(pt, sizeof(pt));
