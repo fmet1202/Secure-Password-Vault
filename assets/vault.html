@@ -1,69 +1,79 @@
 <!DOCTYPE html>
-<html class="light" lang="en"><head>
+<html class="dark" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Dashboard - Code Ge'ez</title>
+<title>Code Ge'ez | Dashboard</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script id="tailwind-config">tailwind.config={theme:{extend:{colors:{primary:"#3525cd","surface-container-lowest":"#ffffff","surface":"#fcf8ff","on-surface-variant":"#464555","surface-container-low":"#f5f2ff","surface-container":"#f0ecf9"},fontFamily:{"label-caps":["Inter"],"body-md":["Inter"],"mono-data":["ui-monospace"],"h1":["Manrope"],"h3":["Manrope"]}}}}</script>
+<script id="tailwind-config">tailwind.config={darkMode:"class",theme:{extend:{colors:{primary:"#6366f1","primary-hover":"#4f46e5"},fontFamily:{"body-md":["Inter"],"h1":["Manrope"]}}}}</script>
 <style>
+    body { font-size: 0 !important; color: transparent !important; background-color: #020617; }
+    #app-container { font-size: 16px !important; color: #f8fafc !important; }
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle;}
-    .shadow-diffused { box-shadow: 0 20px 50px -12px rgba(53, 37, 205, 0.08); }
     .pw-hidden { -webkit-text-security: disc; text-security: disc; letter-spacing: 0.2em; font-family: monospace; }
     .pw-visible { -webkit-text-security: none; text-security: none; font-family: monospace; }
+    
+    /* CLEAN DARK MODE OVERRIDE FOR C INJECTIONS */
+    #override-c-colors > div { background-color: transparent !important; border-color: rgba(255,255,255,0.05) !important; color: #f8fafc !important; }
+    #override-c-colors .text-slate-900, #override-c-colors .text-slate-800, #override-c-colors .text-slate-700 { color: #f8fafc !important; }
+    #override-c-colors .text-slate-500, #override-c-colors .text-slate-400 { color: #94a3b8 !important; }
+    #override-c-colors .bg-slate-50, #override-c-colors .bg-slate-100 { background-color: rgba(30, 41, 59, 0.5) !important; }
+    #override-c-colors .border-slate-100, #override-c-colors .border-slate-200 { border-color: rgba(255,255,255,0.05) !important; }
+    #override-c-colors .hover\:bg-slate-50:hover { background-color: rgba(255, 255, 255, 0.03) !important; }
 </style>
 <script>
-    document.addEventListener("DOMContentLoaded", () => {
-        let w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-        let n; while(n = w.nextNode()) { if(n.nodeValue.includes('Content-Length:')) n.nodeValue = n.nodeValue.replace(/Content-Length:\s*\d+/g, ''); }
-    });
     function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { const btn = document.activeElement; if (btn && btn.tagName === 'BUTTON') { const icon = btn.querySelector('.material-symbols-outlined'); if (icon) { const old = icon.textContent; icon.textContent = 'check'; setTimeout(() => { icon.textContent = old; }, 2000); } } }); }
     function togglePassword(btn) { const span = btn.previousElementSibling; if (span.classList.contains('pw-hidden')) { span.classList.remove('pw-hidden'); span.classList.add('pw-visible'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>'; } else { span.classList.remove('pw-visible'); span.classList.add('pw-hidden'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>'; } }
 </script>
 </head>
-<body class="bg-surface text-[#1b1b24] font-body-md min-h-screen pt-16 flex flex-col">
-<nav class="fixed top-0 w-full z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
-    <div class="flex items-center justify-between px-6 h-16 max-w-full mx-auto">
+<body class="bg-[#020617] min-h-screen relative font-body-md">
+<div id="app-container" class="min-h-screen flex flex-col relative overflow-hidden">
+    <nav class="fixed w-full top-0 border-b z-50 bg-[#020617]/80 backdrop-blur-md border-slate-800 flex justify-between items-center px-6 h-16">
         <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-primary" data-icon="key">key</span>
-            <span class="text-xl font-bold tracking-tighter font-h1">Code Ge'ez</span>
+            <span class="material-symbols-outlined text-primary text-2xl" style="font-variation-settings: 'FILL' 1;">key</span>
+            <span class="text-white font-h1 font-bold tracking-tight text-xl">Code Ge'ez</span>
         </div>
         <div class="flex items-center gap-4">
-            <a href="/vault/add" class="flex items-center gap-2 px-4 py-2 bg-[#e4d4ff] text-[#5c00ca] rounded-full font-label-caps text-xs font-bold uppercase transition-all hover:bg-[#7531e6] hover:text-white"><span class="material-symbols-outlined text-[18px]">add_circle</span> Add Entry</a>
-            <div class="h-6 w-px bg-slate-200 mx-1"></div>
-            <a href="/logout" class="p-2 text-on-surface-variant hover:bg-slate-100 rounded-full transition-colors duration-300"><span class="material-symbols-outlined">logout</span></a>
+            <a href="/vault/add" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg text-sm font-semibold hover:bg-indigo-500 hover:text-white transition-all"><span class="material-symbols-outlined text-[18px]">add_circle</span> Add Entry</a>
+            <div class="h-6 w-px bg-slate-700 mx-1"></div>
+            <a href="/logout" class="p-2 text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">logout</span></a>
         </div>
-    </div>
-</nav>
-<main class="max-w-5xl mx-auto px-6 py-8 flex-grow w-full">
-    <header class="mb-8 flex justify-end">
-        <form method="GET" action="/vault" class="relative w-full max-w-md group">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#777587]">search</span>
-            <input name="q" class="w-full pl-12 pr-16 py-4 bg-surface-container border-none rounded-xl font-body-md focus:ring-2 focus:ring-primary/20 focus:bg-white shadow-diffused transition-all outline-none" placeholder="Search your vault..." type="text"/>
-            <a href="/vault" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#777587] hover:text-[#1b1b24] uppercase">Clear</a>
-        </form>
-    </header>
-    <div id="msg-box" class="hidden mb-4 bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-sm font-semibold">{{MESSAGE}}</div>
-    <script>
-        const msg = document.getElementById('msg-box'); const content = msg.innerHTML.trim();
-        if(content !== '' && content !== '{{MESSAGE}}') { msg.classList.remove('hidden'); }
-    </script>
-    <div class="bg-white rounded-xl shadow-diffused overflow-hidden border border-slate-200">
-        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-[#fcf8ff]">
-            <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">SITE / USERNAME</span>
-            <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">PASSWORD / ACTIONS</span>
+    </nav>
+
+    <main class="w-full max-w-5xl mx-auto px-6 pt-28 pb-12 flex-grow z-10">
+        <div class="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <form method="GET" action="/vault" class="relative w-full md:w-96 ml-auto group">
+                <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-500">search</span>
+                <input name="q" class="w-full pl-12 pr-16 py-3.5 bg-slate-900/50 border border-slate-800 text-slate-200 rounded-xl focus:border-primary focus:ring-1 focus:ring-primary focus:bg-slate-900 transition-all outline-none" placeholder="Search your vault..." type="text"/>
+                <a href="/vault" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 hover:text-slate-300 uppercase">Clear</a>
+            </form>
         </div>
-        {{VAULT_ENTRIES}}
-    </div>
-</main>
-<footer class="mt-auto py-8 text-center flex flex-col items-center justify-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
-    <div class="flex flex-wrap justify-center items-center gap-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">lock</span> AES-256-GCM</span>
-        <span class="hidden sm:inline text-slate-300">•</span>
-        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">vpn_key</span> PBKDF2-HMAC</span>
-        <span class="hidden sm:inline text-slate-300">•</span>
-        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">memory</span> SECURE MEMORY ZEROIZATION</span>
-    </div>
-</footer>
+
+        <div id="msg-box" class="hidden mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-sm font-medium">{{MESSAGE}}</div>
+        <script>
+            const msg = document.getElementById('msg-box'); const content = msg.innerHTML.trim();
+            if(content !== '' && content !== '{{MESSAGE}}') { msg.classList.remove('hidden'); }
+        </script>
+
+        <div class="bg-slate-900/60 backdrop-blur-md border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/80">
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Site / Username</span>
+                <span class="text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Password / Actions</span>
+            </div>
+            <!-- INJECTED C ROWS RENDERED IN CLEAN DARK MODE -->
+            <div id="override-c-colors" class="flex flex-col">
+                {{VAULT_ENTRIES}}
+            </div>
+        </div>
+    </main>
+
+    <footer class="mt-auto py-8 text-center flex justify-center opacity-60 hover:opacity-100 transition-opacity">
+        <div class="flex flex-wrap justify-center items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">lock</span> AES-256 Encrypted</span>
+            <span class="hidden sm:inline text-slate-700">•</span>
+            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">vpn_key</span> Local Processing</span>
+        </div>
+    </footer>
+</div>
 </body></html>
