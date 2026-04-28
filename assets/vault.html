@@ -18,7 +18,7 @@
     function togglePassword(btn) { const span = btn.previousElementSibling; if (span.classList.contains('pw-hidden')) { span.classList.remove('pw-hidden'); span.classList.add('pw-visible'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>'; } else { span.classList.remove('pw-visible'); span.classList.add('pw-hidden'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>'; } }
 </script>
 </head>
-<body class="bg-surface text-[#1b1b24] font-body-md min-h-screen pt-16">
+<body class="bg-surface text-[#1b1b24] font-body-md min-h-screen pt-16 flex flex-col">
 <nav class="fixed top-0 w-full z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
     <div class="flex items-center justify-between px-6 h-16 max-w-full mx-auto">
         <div class="flex items-center gap-3">
@@ -33,7 +33,7 @@
     </div>
 </nav>
 
-<main class="max-w-5xl mx-auto px-6 py-8">
+<main class="max-w-5xl mx-auto px-6 py-8 flex-grow w-full">
     <header class="mb-8 flex justify-end">
         <form method="GET" action="/vault" class="relative w-full max-w-md group">
             <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#777587]">search</span>
@@ -42,14 +42,32 @@
         </form>
     </header>
 
-    <div class="empty:hidden mb-4">{{MESSAGE}}</div>
+    <div id="msg-box" class="hidden mb-4 bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-sm font-semibold">{{MESSAGE}}</div>
+    <script>
+        const msg = document.getElementById('msg-box');
+        const content = msg.innerHTML.trim();
+        if(content !== '' && content !== '{{MESSAGE}}') { msg.classList.remove('hidden'); }
+    </script>
 
     <div class="bg-white rounded-xl shadow-diffused overflow-hidden border border-slate-200">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-[#fcf8ff]">
             <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">SITE / USERNAME</span>
             <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">PASSWORD / ACTIONS</span>
         </div>
+        <!-- INJECTED C ROWS GO HERE -->
         {{VAULT_ENTRIES}}
     </div>
 </main>
+
+<!-- AES INFO FOOTER -->
+<footer class="mt-auto py-8 text-center flex flex-col items-center justify-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
+    <div class="flex flex-wrap justify-center items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+        <span class="flex items-center gap-1"><span class="text-sm">🛡️</span> AES-256 Encrypted</span>
+        <span class="hidden sm:inline">•</span>
+        <span class="flex items-center gap-1"><span class="text-sm">🔒</span> Zero-Knowledge Arch</span>
+        <span class="hidden sm:inline">•</span>
+        <span class="flex items-center gap-1"><span class="text-sm">⚡</span> Local Processing</span>
+    </div>
+</footer>
+
 </body></html>
