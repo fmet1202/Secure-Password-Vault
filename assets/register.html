@@ -64,35 +64,28 @@
     <!-- BULLETPROOF ERROR MESSAGE BOX -->
     <div id="msg-box" class="hidden w-full bg-red-50 text-red-600 font-semibold p-3 rounded-lg text-sm text-center border border-red-100 shadow-sm">{{MESSAGE}}</div>
     <script>
-        const msg = document.getElementById('msg-box');
-        const content = msg.innerHTML.trim();
+        const msg = document.getElementById('msg-box'); const content = msg.innerHTML.trim();
         if(content !== '' && content !== '{{MESSAGE}}') { msg.classList.remove('hidden'); }
     </script>
-
     <div class="vault-card bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/30">
         <form action="/register" class="flex flex-col gap-4" method="POST">
             <input name="csrf_token" type="hidden" value="{{CSRF_TOKEN}}"/>
-            
             <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-xs font-semibold text-on-surface-variant uppercase">Username</label>
                 <div class="relative group"><span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-primary">person</span><input class="w-full pl-12 pr-4 py-3 bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary/20" name="username" required type="text"/></div>
             </div>
-
             <div class="flex flex-col gap-1">
                 <label class="font-label-caps text-xs font-semibold text-on-surface-variant uppercase">Master Password</label>
                 <div class="relative group"><span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-primary">key</span><input oninput="checkStrengthAndMatch()" class="w-full pl-12 pr-4 py-3 bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary/20" id="reg_password" name="password" required minlength="8" type="password"/></div>
             </div>
-
             <div class="flex flex-col gap-1 mt-1">
                 <label class="font-label-caps text-xs font-semibold text-on-surface-variant uppercase">Confirm Password</label>
                 <div class="relative group"><span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline-variant group-focus-within:text-primary">verified_user</span><input oninput="checkStrengthAndMatch()" class="w-full pl-12 pr-4 py-3 bg-surface-container border-none rounded-lg focus:ring-2 focus:ring-primary/20" id="confirm_password" name="confirm_password" required minlength="8" type="password"/></div>
             </div>
-
             <div class="flex flex-col gap-1 mt-2">
                 <div class="flex gap-1"><div class="str-bar h-1.5 flex-1 rounded-full bg-slate-200"></div><div class="str-bar h-1.5 flex-1 rounded-full bg-slate-200"></div><div class="str-bar h-1.5 flex-1 rounded-full bg-slate-200"></div><div class="str-bar h-1.5 flex-1 rounded-full bg-slate-200"></div><div class="str-bar h-1.5 flex-1 rounded-full bg-slate-200"></div></div>
                 <div class="flex justify-between text-[10px] text-on-surface-variant uppercase font-semibold mt-1"><span>Strength: <span id="str-text" class="text-primary"></span></span><span>8+ chars, A-a, 0-9, !@#</span></div>
             </div>
-
             <button class="mt-2 w-full py-4 bg-primary text-white font-h1 font-bold rounded-lg shadow-lg hover:bg-indigo-700 transition-all text-[15px]" type="submit">Register Account</button>
         </form>
         <div class="mt-8 pt-6 border-t border-slate-100 text-center"><a class="text-on-surface-variant hover:text-primary font-label-caps text-xs font-semibold uppercase" href="/login">Back to Login</a></div>

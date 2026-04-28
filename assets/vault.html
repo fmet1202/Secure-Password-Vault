@@ -14,6 +14,10 @@
     .pw-visible { -webkit-text-security: none; text-security: none; font-family: monospace; }
 </style>
 <script>
+    document.addEventListener("DOMContentLoaded", () => {
+        let w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+        let n; while(n = w.nextNode()) { if(n.nodeValue.includes('Content-Length:')) n.nodeValue = n.nodeValue.replace(/Content-Length:\s*\d+/g, ''); }
+    });
     function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { const btn = document.activeElement; if (btn && btn.tagName === 'BUTTON') { const icon = btn.querySelector('.material-symbols-outlined'); if (icon) { const old = icon.textContent; icon.textContent = 'check'; setTimeout(() => { icon.textContent = old; }, 2000); } } }); }
     function togglePassword(btn) { const span = btn.previousElementSibling; if (span.classList.contains('pw-hidden')) { span.classList.remove('pw-hidden'); span.classList.add('pw-visible'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>'; } else { span.classList.remove('pw-visible'); span.classList.add('pw-hidden'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>'; } }
 </script>
@@ -32,7 +36,6 @@
         </div>
     </div>
 </nav>
-
 <main class="max-w-5xl mx-auto px-6 py-8 flex-grow w-full">
     <header class="mb-8 flex justify-end">
         <form method="GET" action="/vault" class="relative w-full max-w-md group">
@@ -41,33 +44,26 @@
             <a href="/vault" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#777587] hover:text-[#1b1b24] uppercase">Clear</a>
         </form>
     </header>
-
     <div id="msg-box" class="hidden mb-4 bg-green-50 text-green-700 p-4 rounded-xl border border-green-200 text-sm font-semibold">{{MESSAGE}}</div>
     <script>
-        const msg = document.getElementById('msg-box');
-        const content = msg.innerHTML.trim();
+        const msg = document.getElementById('msg-box'); const content = msg.innerHTML.trim();
         if(content !== '' && content !== '{{MESSAGE}}') { msg.classList.remove('hidden'); }
     </script>
-
     <div class="bg-white rounded-xl shadow-diffused overflow-hidden border border-slate-200">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-[#fcf8ff]">
             <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">SITE / USERNAME</span>
             <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">PASSWORD / ACTIONS</span>
         </div>
-        <!-- INJECTED C ROWS GO HERE -->
         {{VAULT_ENTRIES}}
     </div>
 </main>
-
-<!-- AES INFO FOOTER -->
 <footer class="mt-auto py-8 text-center flex flex-col items-center justify-center gap-2 opacity-70 hover:opacity-100 transition-opacity">
-    <div class="flex flex-wrap justify-center items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-        <span class="flex items-center gap-1"><span class="text-sm">🛡️</span> AES-256 Encrypted</span>
-        <span class="hidden sm:inline">•</span>
-        <span class="flex items-center gap-1"><span class="text-sm">🔒</span> Zero-Knowledge Arch</span>
-        <span class="hidden sm:inline">•</span>
-        <span class="flex items-center gap-1"><span class="text-sm">⚡</span> Local Processing</span>
+    <div class="flex flex-wrap justify-center items-center gap-5 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
+        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">lock</span> AES-256-GCM</span>
+        <span class="hidden sm:inline text-slate-300">•</span>
+        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">vpn_key</span> PBKDF2-HMAC</span>
+        <span class="hidden sm:inline text-slate-300">•</span>
+        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">memory</span> SECURE MEMORY ZEROIZATION</span>
     </div>
 </footer>
-
 </body></html>
