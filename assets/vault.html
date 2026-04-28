@@ -13,8 +13,6 @@
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle;}
     .pw-hidden { -webkit-text-security: disc; text-security: disc; letter-spacing: 0.2em; font-family: monospace; }
     .pw-visible { -webkit-text-security: none; text-security: none; font-family: monospace; }
-    
-    /* CLEAN DARK MODE OVERRIDE FOR C INJECTIONS */
     #override-c-colors > div { background-color: transparent !important; border-color: rgba(255,255,255,0.05) !important; color: #f8fafc !important; }
     #override-c-colors .text-slate-900, #override-c-colors .text-slate-800, #override-c-colors .text-slate-700 { color: #f8fafc !important; }
     #override-c-colors .text-slate-500, #override-c-colors .text-slate-400 { color: #94a3b8 !important; }
@@ -61,18 +59,19 @@
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-widest">Site / Username</span>
                 <span class="text-xs font-bold text-slate-500 uppercase tracking-widest text-right">Password / Actions</span>
             </div>
-            <!-- INJECTED C ROWS RENDERED IN CLEAN DARK MODE -->
             <div id="override-c-colors" class="flex flex-col">
                 {{VAULT_ENTRIES}}
             </div>
         </div>
     </main>
 
-    <footer class="mt-auto py-8 text-center flex justify-center opacity-60 hover:opacity-100 transition-opacity">
-        <div class="flex flex-wrap justify-center items-center gap-4 text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">lock</span> AES-256 Encrypted</span>
+    <footer class="w-full py-6 text-center flex justify-center opacity-40 hover:opacity-100 transition-opacity z-50">
+        <div class="flex flex-wrap justify-center items-center gap-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">lock</span> AES-256 Encrypted</span>
             <span class="hidden sm:inline text-slate-700">•</span>
-            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[15px]">vpn_key</span> Local Processing</span>
+            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">security</span> Zero-Knowledge Arch</span>
+            <span class="hidden sm:inline text-slate-700">•</span>
+            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">vpn_key</span> Local Processing</span>
         </div>
     </footer>
 </div>
