@@ -2,137 +2,54 @@
 <html class="light" lang="en"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>SecureVault - Password Manager</title>
+<title>Dashboard - Code Ge'ez</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-<script id="tailwind-config">
-    tailwind.config = {
-        darkMode: "class",
-        theme: {
-            extend: {
-                "colors": {
-                    "surface-container": "#f0ecf9", "on-surface-variant": "#464555",
-                    "surface-container-highest": "#e4e1ee", "surface-bright": "#fcf8ff",
-                    "background": "#fcf8ff", "surface-container-high": "#eae6f4",
-                    "primary-container": "#4f46e5", "surface-container-lowest": "#ffffff",
-                    "error": "#ba1a1a", "on-error": "#ffffff", "on-background": "#1b1b24",
-                    "primary": "#3525cd", "on-primary": "#ffffff", "surface": "#fcf8ff",
-                    "outline-variant": "#c7c4d8", "outline": "#777587"
-                },
-                "fontFamily": {
-                    "label-caps":["Inter"], "body-md": ["Inter"], "mono-data": ["ui-monospace"],
-                    "h3": ["Manrope"], "h1": ["Manrope"], "h2": ["Manrope"]
-                }
-            }
-        }
-    }
-</script>
+<script id="tailwind-config">tailwind.config={theme:{extend:{colors:{primary:"#3525cd","surface-container-lowest":"#ffffff","surface":"#fcf8ff","on-surface-variant":"#464555","surface-container-low":"#f5f2ff","surface-container":"#f0ecf9"},fontFamily:{"label-caps":["Inter"],"body-md":["Inter"],"mono-data":["ui-monospace"],"h1":["Manrope"],"h3":["Manrope"]}}}}</script>
 <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle;}
     .shadow-diffused { box-shadow: 0 20px 50px -12px rgba(53, 37, 205, 0.08); }
-    .glass-master-key { background: rgba(255, 255, 255, 0.4); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.3); }
     .pw-hidden { -webkit-text-security: disc; text-security: disc; letter-spacing: 0.2em; font-family: monospace; }
     .pw-visible { -webkit-text-security: none; text-security: none; font-family: monospace; }
 </style>
 <script>
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text).then(() => {
-            const btn = document.activeElement;
-            if (btn && btn.tagName === 'BUTTON') {
-                const icon = btn.querySelector('.material-symbols-outlined');
-                if (icon) {
-                    const old = icon.textContent;
-                    icon.textContent = 'check';
-                    setTimeout(() => { icon.textContent = old; }, 2000);
-                }
-            }
-        });
-    }
-    function togglePassword(btn) {
-        const span = btn.previousElementSibling;
-        if (span.classList.contains('pw-hidden')) {
-            span.classList.remove('pw-hidden'); span.classList.add('pw-visible');
-            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>';
-        } else {
-            span.classList.remove('pw-visible'); span.classList.add('pw-hidden');
-            btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>';
-        }
-    }
+    function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { const btn = document.activeElement; if (btn && btn.tagName === 'BUTTON') { const icon = btn.querySelector('.material-symbols-outlined'); if (icon) { const old = icon.textContent; icon.textContent = 'check'; setTimeout(() => { icon.textContent = old; }, 2000); } } }); }
+    function togglePassword(btn) { const span = btn.previousElementSibling; if (span.classList.contains('pw-hidden')) { span.classList.remove('pw-hidden'); span.classList.add('pw-visible'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>'; } else { span.classList.remove('pw-visible'); span.classList.add('pw-hidden'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>'; } }
 </script>
 </head>
-<body class="bg-background text-on-background font-body-md min-h-screen pt-16">
-<nav class="fixed top-0 w-full z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-2xl shadow-slate-200/20">
+<body class="bg-surface text-[#1b1b24] font-body-md min-h-screen pt-16">
+<nav class="fixed top-0 w-full z-50 border-b border-slate-200/50 bg-white/80 backdrop-blur-xl shadow-sm">
     <div class="flex items-center justify-between px-6 h-16 max-w-full mx-auto">
         <div class="flex items-center gap-3">
-            <span class="material-symbols-outlined text-indigo-600" data-icon="lock">lock</span>
-            <span class="text-xl font-bold tracking-tighter text-slate-900 font-h1">SecureVault</span>
+            <span class="material-symbols-outlined text-primary" data-icon="key">key</span>
+            <span class="text-xl font-bold tracking-tighter font-h1">Code Ge'ez</span>
         </div>
         <div class="flex items-center gap-4">
-            <a href="/vault/add" class="flex items-center gap-2 px-4 py-2 bg-primary-container text-white rounded-full font-label-caps text-xs font-bold uppercase transition-all active:scale-95 hover:shadow-lg hover:shadow-indigo-500/20">
-                <span class="material-symbols-outlined text-[18px]">add_circle</span> Add Entry
-            </a>
-            <div class="h-6 w-px bg-outline-variant mx-1"></div>
-            <a href="/logout" class="p-2 text-on-surface-variant hover:bg-slate-100 rounded-full transition-colors duration-300">
-                <span class="material-symbols-outlined">logout</span>
-            </a>
+            <a href="/vault/add" class="flex items-center gap-2 px-4 py-2 bg-[#e4d4ff] text-[#5c00ca] rounded-full font-label-caps text-xs font-bold uppercase transition-all hover:bg-[#7531e6] hover:text-white"><span class="material-symbols-outlined text-[18px]">add_circle</span> Add Entry</a>
+            <div class="h-6 w-px bg-slate-200 mx-1"></div>
+            <a href="/logout" class="p-2 text-on-surface-variant hover:bg-slate-100 rounded-full transition-colors duration-300"><span class="material-symbols-outlined">logout</span></a>
         </div>
     </div>
 </nav>
 
-<main class="max-w-[1280px] mx-auto px-12 py-8">
-    <header class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div class="space-y-1">
-            <h1 class="font-h1 text-4xl font-bold text-on-surface">Vault Dashboard</h1>
-            <p class="font-body-md text-on-surface-variant max-w-xl">Encrypted storage for your digital identity and credentials.</p>
-        </div>
+<main class="max-w-5xl mx-auto px-6 py-8">
+    <header class="mb-8 flex justify-end">
         <form method="GET" action="/vault" class="relative w-full max-w-md group">
-            <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline">search</span>
-            <input name="q" class="w-full pl-12 pr-16 py-4 bg-surface-container-low border-none rounded-xl font-body-md focus:ring-2 focus:ring-primary/20 focus:bg-white shadow-diffused transition-all outline-none" placeholder="Search your vault..." type="text"/>
-            <a href="/vault" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-on-surface-variant hover:text-on-surface uppercase">Clear</a>
+            <span class="absolute left-4 top-1/2 -translate-y-1/2 material-symbols-outlined text-[#777587]">search</span>
+            <input name="q" class="w-full pl-12 pr-16 py-4 bg-surface-container border-none rounded-xl font-body-md focus:ring-2 focus:ring-primary/20 focus:bg-white shadow-diffused transition-all outline-none" placeholder="Search your vault..." type="text"/>
+            <a href="/vault" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-bold text-[#777587] hover:text-[#1b1b24] uppercase">Clear</a>
         </form>
     </header>
 
-    <section class="mb-8">
-        {{MESSAGE}}
-        <div class="glass-master-key rounded-xl p-4 flex items-center justify-between shadow-diffused">
-            <div class="flex items-center gap-4">
-                <div class="w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white">
-                    <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">key</span>
-                </div>
-                <div>
-                    <h3 class="font-h3 text-[16px] font-bold text-primary">Master Key Active</h3>
-                    <p class="text-[13px] text-on-surface-variant font-body-md">High-security mode enabled. Memory is protected.</p>
-                </div>
-            </div>
+    <div class="empty:hidden mb-4">{{MESSAGE}}</div>
+
+    <div class="bg-white rounded-xl shadow-diffused overflow-hidden border border-slate-200">
+        <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-[#fcf8ff]">
+            <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">SITE / USERNAME</span>
+            <span class="font-label-caps text-xs font-bold text-[#777587] uppercase tracking-widest">PASSWORD / ACTIONS</span>
         </div>
-    </section>
-
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <aside class="lg:col-span-3 space-y-6">
-            <div class="bg-indigo-900 rounded-xl p-6 text-white overflow-hidden relative group">
-                <div class="relative z-10">
-                    <h3 class="font-h3 text-xl font-bold mb-2">Security Score</h3>
-                    <div class="text-3xl font-bold mb-4">100%</div>
-                    <div class="w-full bg-indigo-700 h-2 rounded-full overflow-hidden">
-                        <div class="bg-indigo-300 h-full w-[100%]"></div>
-                    </div>
-                </div>
-                <span class="absolute -right-4 -bottom-4 material-symbols-outlined text-[100px] text-white/5 rotate-12 group-hover:rotate-0 transition-transform duration-500">shield</span>
-            </div>
-        </aside>
-
-        <section class="lg:col-span-9">
-            <div class="bg-white rounded-xl shadow-diffused overflow-hidden border border-slate-100">
-                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                    <span class="font-label-caps text-xs font-bold text-outline uppercase tracking-widest">SITE / USERNAME</span>
-                    <span class="font-label-caps text-xs font-bold text-outline uppercase tracking-widest">PASSWORD / ACTIONS</span>
-                </div>
-                
-                {{VAULT_ENTRIES}}
-                
-            </div>
-        </section>
+        {{VAULT_ENTRIES}}
     </div>
 </main>
 </body></html>
