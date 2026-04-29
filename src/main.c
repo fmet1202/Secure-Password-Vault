@@ -1,5 +1,7 @@
 #include "mongoose.h"
 #include "securevault.h"
+#include <sys/mman.h>
+#include <unistd.h>
 
 #ifdef method
 #undef method
@@ -170,7 +172,7 @@ static void log_request(struct mg_http_message *hm) {
     memcpy(uri_str, hm->uri.buf, ulen);
     
     const char* method_str = (hm->method == MG_HTTP_POST) ? "POST" : "GET";
-    printf("\n[HTTP] %s %s\n", method_str, uri_str);
+    printf("\n[HTTPS] %s %s\n", method_str, uri_str);
 }
 
 static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
@@ -370,6 +372,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
 }
 
 int main(void) {
+    if (mlockall(MCL_CURRENT | MCL_FUTURE) == 0) {
+        printf("[SECURITY] Kernel-Level Memory Hardening (mlockall) ENABLED. RAM swap prevented.\n");
+    } else {
+        printf("[WARNING] mlockall() failed. OS might swap memory to disk. (Try running with elevated privileges / ulimit -l)\n");
+    }
+
     char* cert_data = read_file("cert.pem");
     char* key_data = read_file("key.pem");
     if (!cert_data || !key_data) {
@@ -387,7 +395,7 @@ int main(void) {
     struct mg_mgr mgr;
     mg_mgr_init(&mgr);
     mg_http_listen(&mgr, "https://0.0.0.0:8443", ev_handler, NULL);
-    printf("SecureVault Web started on https://127.0.0.1:8443\n");
+    printf("[NETWORK] SecureVault Web started on https://127.0.0.1:8443\n");
 
     for (;;) mg_mgr_poll(&mgr, 1000);
 
