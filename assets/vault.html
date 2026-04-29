@@ -23,6 +23,66 @@
 <script>
     function copyToClipboard(text) { navigator.clipboard.writeText(text).then(() => { const btn = document.activeElement; if (btn && btn.tagName === 'BUTTON') { const icon = btn.querySelector('.material-symbols-outlined'); if (icon) { const old = icon.textContent; icon.textContent = 'check'; setTimeout(() => { icon.textContent = old; }, 2000); } } }); }
     function togglePassword(btn) { const span = btn.previousElementSibling; if (span.classList.contains('pw-hidden')) { span.classList.remove('pw-hidden'); span.classList.add('pw-visible'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility_off</span>'; } else { span.classList.remove('pw-visible'); span.classList.add('pw-hidden'); btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">visibility</span>'; } }
+    
+    async function auditVault() {
+        const btn = document.getElementById('audit-btn');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[18px]">sync</span> Auditing...';
+        btn.disabled = true;
+
+        const pwSpans = document.querySelectorAll('.pw-hidden, .pw-visible');
+        let breachedCount = 0;
+
+        for (let span of pwSpans) {
+            const pw = span.textContent;
+            if (!pw || pw === 'ERROR') continue;
+
+            const msgBuffer = new TextEncoder().encode(pw);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+
+            const prefix = hashHex.substring(0, 5);
+            const suffix = hashHex.substring(5);
+
+            try {
+                const res = await fetch(`https://api.pwnedpasswords.com/range/${prefix}`);
+                const text = await res.text();
+                
+                const parent = span.parentNode;
+                const oldBadge = parent.querySelector('.breach-badge');
+                if(oldBadge) oldBadge.remove();
+
+                if (text.includes(suffix)) {
+                    breachedCount++;
+                    span.classList.add('text-red-400');
+                    const warningHtml = `<span class="breach-badge ml-3 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-red-500/20 text-red-400 border border-red-500/30 uppercase tracking-wider"><span class="material-symbols-outlined text-[12px]">warning</span> Compromised</span>`;
+                    span.insertAdjacentHTML('afterend', warningHtml);
+                } else {
+                    span.classList.remove('text-red-400');
+                    const safeHtml = `<span class="breach-badge ml-3 inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 uppercase tracking-wider"><span class="material-symbols-outlined text-[12px]">check_circle</span> Safe</span>`;
+                    span.insertAdjacentHTML('afterend', safeHtml);
+                }
+            } catch(e) {
+                console.error("Audit failed", e);
+            }
+        }
+
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        
+        if(breachedCount > 0) {
+            const msgBox = document.getElementById('msg-box');
+            msgBox.className = 'mb-6 bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-xl text-sm font-medium';
+            msgBox.innerHTML = `<span class="material-symbols-outlined align-middle mr-1">warning</span> Audit Complete: ${breachedCount} compromised password(s) found! Update them immediately.`;
+            msgBox.classList.remove('hidden');
+        } else {
+            const msgBox = document.getElementById('msg-box');
+            msgBox.className = 'mb-6 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 p-4 rounded-xl text-sm font-medium';
+            msgBox.innerHTML = `<span class="material-symbols-outlined align-middle mr-1">verified_user</span> Audit Complete: 0 compromised passwords found. Your vault is secure.`;
+            msgBox.classList.remove('hidden');
+        }
+    }
 </script>
 </head>
 <body class="bg-[#020617] min-h-screen relative font-body-md">
@@ -33,6 +93,8 @@
             <span class="text-white font-h1 font-bold tracking-tight text-xl">Code Ge'ez</span>
         </div>
         <div class="flex items-center gap-4">
+            <button id="audit-btn" onclick="auditVault()" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-lg text-sm font-semibold hover:bg-amber-500 hover:text-white transition-all"><span class="material-symbols-outlined text-[18px]">policy</span> Run Audit</button>
+            
             <a href="/vault/add" class="hidden sm:flex items-center gap-2 px-4 py-2 bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 rounded-lg text-sm font-semibold hover:bg-indigo-500 hover:text-white transition-all"><span class="material-symbols-outlined text-[18px]">add_circle</span> Add Entry</a>
             <div class="h-6 w-px bg-slate-700 mx-1"></div>
             <a href="/logout" class="p-2 text-slate-400 hover:text-white transition-colors"><span class="material-symbols-outlined">logout</span></a>
@@ -69,7 +131,7 @@
         <div class="flex flex-wrap justify-center items-center gap-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
             <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">lock</span> AES-256 Encrypted</span>
             <span class="hidden sm:inline text-slate-700">•</span>
-            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">security</span> Zero-Knowledge Arch</span>
+            <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">security</span> k-Anonymity Audit</span>
             <span class="hidden sm:inline text-slate-700">•</span>
             <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[13px]">vpn_key</span> Local Processing</span>
         </div>
