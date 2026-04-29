@@ -104,6 +104,7 @@ struct mg_http_message* mg_http_get_message(struct mg_connection* c);
 
 bool mg_match(mg_str uri, mg_str pattern, int* caps);
 int mg_vcasecmp(const mg_str* a, const char* b);
+void mg_printf(struct mg_connection* c, const char* fmt, ...);
 void mg_http_reply(struct mg_connection* c, int status_code, const char* headers, const char* body_fmt, ...);
 
 const char* mg_get_header(HttpRequest* req, const char* name);

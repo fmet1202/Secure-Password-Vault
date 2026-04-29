@@ -216,6 +216,22 @@ int mg_http_get_var(const mg_str* body, const char* name, char* out, size_t len)
     return -1;
 }
 
+void mg_printf(struct mg_connection* c, const char* fmt, ...) {
+    char buf[65536];
+    va_list args;
+    va_start(args, fmt);
+    int len = vsnprintf(buf, sizeof(buf), fmt, args);
+    va_end(args);
+    
+    if (len > 0) {
+        if (g_current_ssl) {
+            SSL_write(g_current_ssl, buf, len);
+        } else {
+            send(c->fd, buf, (size_t)len, 0);
+        }
+    }
+}
+
 void mg_http_reply(struct mg_connection* c, int status_code, const char* headers, const char* body_fmt, ...) {
     char header[4096];
     int header_len = snprintf(header, sizeof(header),

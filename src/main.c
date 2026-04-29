@@ -88,7 +88,7 @@ static char* web_render_vault(LoggedInUser* session, const char* csrf_token, con
     int offset = 0;
     
     if (PQntuples(res) == 0) {
-        offset += snprintf(rows_html, sizeof(rows_html), "<div class='text-center p-8 text-on-surface-variant font-medium border-t border-slate-50'>No entries found in your vault.</div>");
+        offset += snprintf(rows_html, sizeof(rows_html), "<div class='text-center p-8 text-slate-500 font-medium border-t border-slate-800'>No entries found in your vault.</div>");
     }
     
     for (int i = 0; i < PQntuples(res); i++) {
@@ -109,44 +109,44 @@ static char* web_render_vault(LoggedInUser* session, const char* csrf_token, con
         bool decrypted = crypto_aead_decrypt(ct, ct_len, tag, session->derived_key, iv, pt);
         
         offset += snprintf(rows_html + offset, sizeof(rows_html) - offset,
-            "<div class='group px-6 py-4 hover:bg-indigo-50/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 %s'>"
+            "<div class='group px-6 py-4 hover:bg-slate-800/50 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 %s'>"
             "    <div class='flex items-center gap-4'>"
-            "        <div class='w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary group-hover:bg-white group-hover:shadow-sm transition-all'>"
+            "        <div class='w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center text-primary group-hover:bg-slate-700 transition-all shadow-md'>"
             "            <span class='material-symbols-outlined'>lock</span>"
             "        </div>"
             "        <div>"
-            "            <h4 class='font-h3 text-[16px] text-slate-900 leading-none mb-1'>%s</h4>"
-            "            <p class='font-mono text-sm text-on-surface-variant'>%s</p>"
+            "            <h4 class='font-h3 text-[16px] text-white font-bold leading-none mb-1'>%s</h4>"
+            "            <p class='font-mono text-sm text-slate-400'>%s</p>"
             "        </div>"
             "    </div>"
             "    <div class='flex items-center gap-4'>"
-            "        <div class='flex items-center gap-3 px-4 py-2 bg-surface-container-low rounded-lg font-mono text-sm'>"
-            "            <span class='tracking-widest text-slate-900 pw-hidden'>%s</span>"
-            "            <button onclick='togglePassword(this)' class='text-outline hover:text-primary transition-colors'>"
+            "        <div class='flex items-center gap-3 px-4 py-2 bg-slate-900/80 border border-slate-700 rounded-lg font-mono text-sm shadow-inner'>"
+            "            <span class='tracking-widest text-slate-300 pw-hidden'>%s</span>"
+            "            <button onclick='togglePassword(this)' class='text-slate-500 hover:text-primary transition-colors'>"
             "                <span class='material-symbols-outlined text-[18px]'>visibility</span>"
             "            </button>"
             "        </div>"
-            "        <div class='flex items-center gap-1 opacity-60 group-hover:opacity-100 transition-opacity'>"
-            "            <button onclick='copyToClipboard(\"%s\")' class='p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-on-surface-variant' title='Copy User'>"
+            "        <div class='flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity'>"
+            "            <button onclick='copyToClipboard(\"%s\")' class='p-2 hover:bg-slate-700 hover:text-white rounded-lg transition-all text-slate-400' title='Copy User'>"
             "                <span class='material-symbols-outlined text-[20px]'>person</span>"
             "            </button>"
-            "            <button onclick='copyToClipboard(\"%s\")' class='p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-on-surface-variant' title='Copy Password'>"
+            "            <button onclick='copyToClipboard(\"%s\")' class='p-2 hover:bg-slate-700 hover:text-white rounded-lg transition-all text-slate-400' title='Copy Password'>"
             "                <span class='material-symbols-outlined text-[20px]'>content_copy</span>"
             "            </button>"
-            "            <a href='/vault/edit?id=%d' class='p-2 hover:bg-white hover:shadow-sm rounded-lg transition-all text-on-surface-variant' title='Edit'>"
+            "            <a href='/vault/edit?id=%d' class='p-2 hover:bg-slate-700 hover:text-white rounded-lg transition-all text-slate-400' title='Edit'>"
             "                <span class='material-symbols-outlined text-[20px]'>edit</span>"
             "            </a>"
             "            <form action='/vault/delete' method='POST' class='m-0 p-0 inline' onsubmit='return confirm(\"Delete this credential?\");'>"
             "                <input type='hidden' name='csrf_token' value='%s'>"
             "                <input type='hidden' name='entry_id' value='%d'>"
-            "                <button type='submit' class='p-2 hover:bg-red-50 hover:text-red-600 rounded-lg transition-all text-on-surface-variant' title='Delete'>"
+            "                <button type='submit' class='p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg transition-all text-slate-400' title='Delete'>"
             "                    <span class='material-symbols-outlined text-[20px]'>delete</span>"
             "                </button>"
             "            </form>"
             "        </div>"
             "    </div>"
             "</div>",
-            i > 0 ? "border-t border-slate-50" : "",
+            i > 0 ? "border-t border-slate-800" : "",
             site, user, decrypted ? (char*)pt : "ERROR", user, decrypted ? (char*)pt : "", id, csrf_token, id);
         
         OPENSSL_cleanse(pt, sizeof(pt));
@@ -170,9 +170,35 @@ static void log_request(struct mg_http_message *hm) {
     char uri_str[256] = {0};
     size_t ulen = hm->uri.len < 255 ? hm->uri.len : 255;
     memcpy(uri_str, hm->uri.buf, ulen);
-    
     const char* method_str = (hm->method == MG_HTTP_POST) ? "POST" : "GET";
     printf("\n[HTTPS] %s %s\n", method_str, uri_str);
+}
+
+static void send_html_response(struct mg_connection *c, int status, const char *body) {
+    if (!body) body = "";
+    mg_printf(c, "HTTP/1.1 %d OK\r\n"
+                 "%s"
+                 "Content-Type: text/html\r\n"
+                 "Content-Length: %zu\r\n\r\n%s", 
+              status, SEC_HEADERS, strlen(body), body);
+}
+
+static void send_text_response(struct mg_connection *c, int status, const char *body) {
+    if (!body) body = "";
+    mg_printf(c, "HTTP/1.1 %d OK\r\n"
+                 "%s"
+                 "Content-Type: text/plain\r\n"
+                 "Content-Length: %zu\r\n\r\n%s", 
+              status, SEC_HEADERS, strlen(body), body);
+}
+
+static void send_redirect(struct mg_connection *c, const char *location, const char *cookie) {
+    mg_printf(c, "HTTP/1.1 302 Found\r\n"
+                 "%s"
+                 "Location: %s\r\n"
+                 "%s"
+                 "Content-Length: 0\r\n\r\n", 
+              SEC_HEADERS, location, cookie ? cookie : "");
 }
 
 static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
@@ -190,9 +216,6 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
         session_extract_cookie(hm, session_cookie, sizeof(session_cookie));
         bool is_authed = session_validate(session_cookie, &session, session_csrf);
 
-        char headers[512];
-        snprintf(headers, sizeof(headers), "%sContent-Type: text/html\r\n", SEC_HEADERS);
-
         if (is_route(hm, "/") || is_route(hm, "/login")) {
             if (is_post(hm)) {
                 char user[256]={0}, pass[256]={0};
@@ -203,26 +226,23 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 if (auth_login(user, pass, &tmp_sess)) {
                     char token[65], csrf[65];
                     if (session_create(tmp_sess.user_id, tmp_sess.derived_key, token, csrf)) {
-                        char out_hdrs[512];
-                        snprintf(out_hdrs, sizeof(out_hdrs), 
-                            "%sLocation: /vault?msg=Login+successful\r\n"
-                            "Set-Cookie: session_id=%s; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600\r\n", 
-                            SEC_HEADERS, token);
-                        mg_http_reply(c, 302, out_hdrs, "");
+                        char cookie[256];
+                        snprintf(cookie, sizeof(cookie), "Set-Cookie: session_id=%s; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=3600\r\n", token);
+                        send_redirect(c, "/vault?msg=Login+successful", cookie);
                     } else {
-                        mg_http_reply(c, 302, "Location: /login?err=Server+Error\r\n", "");
+                        send_redirect(c, "/login?err=Server+Error", NULL);
                     }
                     OPENSSL_cleanse(tmp_sess.derived_key, AES_KEY_SIZE);
                 } else {
-                    mg_http_reply(c, 302, "Location: /login?err=Invalid+Username+or+Password\r\n", "");
+                    send_redirect(c, "/login?err=Invalid+Username+or+Password", NULL);
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
             } else { 
-                if (is_authed) { mg_http_reply(c, 302, "Location: /vault\r\n", ""); return; }
+                if (is_authed) { send_redirect(c, "/vault", NULL); return; }
                 char* html = read_file("assets/login.html");
                 char* flash = get_flash_message(hm);
                 char* final = render_template(html, "{{MESSAGE}}", flash);
-                mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
+                send_html_response(c, 200, final ? final : "File missing");
                 free(html); free(flash); free(final);
             }
         }
@@ -232,21 +252,21 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 mg_http_get_var(&hm->body, "username", user, sizeof(user));
                 mg_http_get_var(&hm->body, "password", pass, sizeof(pass));
                 if (auth_register(user, pass)) {
-                    mg_http_reply(c, 302, "Location: /login?msg=Registration+successful.+Please+log+in.\r\n", "");
+                    send_redirect(c, "/login?msg=Registration+successful.+Please+log+in.", NULL);
                 } else {
-                    mg_http_reply(c, 302, "Location: /register?err=Registration+failed.+Username+may+be+taken.\r\n", "");
+                    send_redirect(c, "/register?err=Registration+failed.+Username+may+be+taken.", NULL);
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
             } else { 
                 char* html = read_file("assets/register.html");
                 char* flash = get_flash_message(hm);
                 char* final = render_template(html, "{{MESSAGE}}", flash);
-                mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
+                send_html_response(c, 200, final ? final : "File missing");
                 free(html); free(flash); free(final);
             }
         }
         else if (is_route(hm, "/vault")) {
-            if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
+            if (!is_authed) { send_redirect(c, "/login?err=Please+log+in", NULL); return; }
             
             char search_query[256] = {0};
             struct mg_str *qs = hm->query.len > 0 ? &hm->query : &hm->uri;
@@ -260,11 +280,11 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
             char* t2 = render_template(t1, "{{VAULT_ENTRIES}}", rows);
             char* final = render_template(t2, "{{CSRF_TOKEN}}", session_csrf);
             
-            mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
+            send_html_response(c, 200, final ? final : "File missing");
             free(html); free(flash); free(rows); free(t1); free(t2); free(final);
         }
         else if (is_route(hm, "/vault/add")) {
-            if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
+            if (!is_authed) { send_redirect(c, "/login?err=Please+log+in", NULL); return; }
             if (is_post(hm)) {
                 char site[256]={0}, user[256]={0}, pass[256]={0}, csrf[65]={0};
                 mg_http_get_var(&hm->body, "site", site, sizeof(site));
@@ -274,12 +294,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 
                 if (csrf_validate(session_csrf, csrf)) {
                     if (vault_add(&session, site, user, pass)) {
-                        mg_http_reply(c, 302, "Location: /vault?msg=Entry+added+successfully\r\n", "");
+                        send_redirect(c, "/vault?msg=Entry+added+successfully", NULL);
                     } else {
-                        mg_http_reply(c, 302, "Location: /vault/add?err=Failed+to+save+entry\r\n", "");
+                        send_redirect(c, "/vault/add?err=Failed+to+save+entry", NULL);
                     }
                 } else {
-                    mg_http_reply(c, 302, "Location: /vault/add?err=Security+Validation+Failed+(CSRF)\r\n", "");
+                    send_redirect(c, "/vault/add?err=Security+Validation+Failed+(CSRF)", NULL);
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
             } else { 
@@ -287,12 +307,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 char* flash = get_flash_message(hm);
                 char* t1 = render_template(html, "{{MESSAGE}}", flash);
                 char* final = render_template(t1, "{{CSRF_TOKEN}}", session_csrf);
-                mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
+                send_html_response(c, 200, final ? final : "File missing");
                 free(html); free(flash); free(t1); free(final);
             }
         }
         else if (is_route(hm, "/vault/edit")) {
-            if (!is_authed) { mg_http_reply(c, 302, "Location: /login?err=Please+log+in\r\n", ""); return; }
+            if (!is_authed) { send_redirect(c, "/login?err=Please+log+in", NULL); return; }
             if (is_post(hm)) {
                 char id_str[16]={0}, site[256]={0}, user[256]={0}, pass[256]={0}, csrf[65]={0};
                 mg_http_get_var(&hm->body, "entry_id", id_str, sizeof(id_str));
@@ -303,12 +323,12 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                 
                 if (csrf_validate(session_csrf, csrf)) {
                     if (vault_update(&session, atoi(id_str), site, user, pass)) {
-                        mg_http_reply(c, 302, "Location: /vault?msg=Entry+updated+successfully\r\n", "");
+                        send_redirect(c, "/vault?msg=Entry+updated+successfully", NULL);
                     } else {
-                        mg_http_reply(c, 302, "Location: /vault?err=Update+failed\r\n", "");
+                        send_redirect(c, "/vault?err=Update+failed", NULL);
                     }
                 } else {
-                    mg_http_reply(c, 302, "Location: /vault?err=CSRF+Validation+Failed\r\n", "");
+                    send_redirect(c, "/vault?err=CSRF+Validation+Failed", NULL);
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
             } else { 
@@ -324,47 +344,48 @@ static void ev_handler(struct mg_connection *c, int ev, void *ev_data) {
                     char *t3 = render_template(t2, "{{USER}}", user);
                     char *t4 = render_template(t3, "{{PASS}}", pass);
                     char *final = render_template(t4, "{{CSRF_TOKEN}}", session_csrf);
-                    mg_http_reply(c, 200, headers, "%s", final ? final : "File missing");
+                    send_html_response(c, 200, final ? final : "File missing");
                     free(html); free(t1); free(t2); free(t3); free(t4); free(final);
                 } else {
-                    mg_http_reply(c, 302, "Location: /vault?err=Entry+not+found\r\n", "");
+                    send_redirect(c, "/vault?err=Entry+not+found", NULL);
                 }
                 OPENSSL_cleanse(pass, sizeof(pass));
             }
         }
         else if (is_route(hm, "/vault/delete")) {
-            if (!is_authed) { mg_http_reply(c, 302, "Location: /login\r\n", ""); return; }
+            if (!is_authed) { send_redirect(c, "/login", NULL); return; }
             if (is_post(hm)) {
                 char id_str[16]={0}, csrf[65]={0};
                 mg_http_get_var(&hm->body, "entry_id", id_str, sizeof(id_str));
                 mg_http_get_var(&hm->body, "csrf_token", csrf, sizeof(csrf));
                 if (csrf_validate(session_csrf, csrf)) {
                     vault_delete(&session, atoi(id_str));
-                    mg_http_reply(c, 302, "Location: /vault?msg=Entry+deleted\r\n", "");
+                    send_redirect(c, "/vault?msg=Entry+deleted", NULL);
                 } else {
-                    mg_http_reply(c, 302, "Location: /vault?err=CSRF+Validation+Failed\r\n", "");
+                    send_redirect(c, "/vault?err=CSRF+Validation+Failed", NULL);
                 }
             } else {
-                mg_http_reply(c, 302, "Location: /vault\r\n", "");
+                send_redirect(c, "/vault", NULL);
             }
         }
         else if (is_route(hm, "/api/generate")) {
-            if (!is_authed) { mg_http_reply(c, 401, "", "Unauthorized"); return; }
+            if (!is_authed) { 
+                mg_printf(c, "HTTP/1.1 401 Unauthorized\r\nContent-Length: 0\r\n\r\n"); 
+                return; 
+            }
             char secure_pass[21]; 
             crypto_generate_password(secure_pass, sizeof(secure_pass));
-            mg_http_reply(c, 200, "Content-Type: text/plain\r\n", "%s", secure_pass);
+            send_text_response(c, 200, secure_pass);
             OPENSSL_cleanse(secure_pass, sizeof(secure_pass));
         }
         else if (is_route(hm, "/logout")) {
             session_destroy(session_cookie);
-            char out_hdrs[512];
-            snprintf(out_hdrs, sizeof(out_hdrs), 
-                "%sLocation: /login?msg=You+have+been+logged+out.\r\n"
-                "Set-Cookie: session_id=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0\r\n", SEC_HEADERS);
-            mg_http_reply(c, 302, out_hdrs, "");
+            char cookie[256];
+            snprintf(cookie, sizeof(cookie), "Set-Cookie: session_id=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0\r\n");
+            send_redirect(c, "/login?msg=You+have+been+logged+out.", cookie);
         }
         else {
-            mg_http_reply(c, 302, "Location: /login\r\n", "");
+            send_redirect(c, "/login", NULL);
         }
         
         if (is_authed) OPENSSL_cleanse(session.derived_key, AES_KEY_SIZE);
