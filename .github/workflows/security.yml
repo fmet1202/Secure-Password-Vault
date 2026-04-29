@@ -1,0 +1,30 @@
+name: Code Ge'ez Security Audit
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build_and_audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v3
+
+    - name: Install Cryptographic & Build Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential libssl-dev libsqlite3-dev cppcheck
+
+    - name: Compile Secure Vault
+      run: |
+        make clean
+        make
+
+    - name: Run Cppcheck Security Audit
+      run: |
+        echo "Running Static Security Analysis..."
+        cppcheck --enable=all --inconclusive --error-exitcode=1 main.c
