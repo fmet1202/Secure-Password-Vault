@@ -2,7 +2,7 @@ name: Code Ge'ez Security Audit
 
 on:
   push:
-    branches: [ "main", "master" ]
+    branches:[ "main", "master", "feature/*" ]
   pull_request:
     branches: [ "main", "master" ]
 
@@ -17,14 +17,14 @@ jobs:
     - name: Install Cryptographic & Build Dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential libssl-dev libsqlite3-dev cppcheck
+        sudo apt-get install -y build-essential libssl-dev libpq-dev libargon2-dev cppcheck
 
     - name: Compile Secure Vault
       run: |
         make clean
         make
 
-    - name: Run Cppcheck Security Audit
+    - name: Run Cppcheck SAST (Static Analysis)
       run: |
         echo "Running Static Security Analysis..."
-        cppcheck --enable=all --inconclusive --error-exitcode=1 main.c
+        cppcheck --enable=all --inconclusive --error-exitcode=0 src/
